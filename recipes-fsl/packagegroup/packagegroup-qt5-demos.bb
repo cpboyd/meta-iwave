@@ -23,9 +23,3 @@ RDEPENDS_${PN} += " \
 RDEPENDS_${PN}_append_imxgpu3d = " \
     qt3d-examples \
 "
-
-RDEPENDS_${PN}_remove = " \
-    qtbase-examples \
-    qtdeclarative-examples \
-    qt3d-examples \
-"

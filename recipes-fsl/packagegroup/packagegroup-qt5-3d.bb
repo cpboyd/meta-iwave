@@ -14,7 +14,3 @@ RDEPENDS_${PN} += " \
     qt3d-qmlplugins \
     qt3d-tools \
 "
-
-RDEPENDS_${PN}_remove = " \
-    qt3d-examples \
-"
