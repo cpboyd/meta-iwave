@@ -32,7 +32,8 @@ QT5_IMAGE_INSTALL_append_imxgpu3d = " \
 
 # Most of QtWebEngine demo are currently broken.
 # If you want to test them uncomment the following line
-# QT5_IMAGE_INSTALL_append_imxgpu3d = " packagegroup-qt5-webengine"
+QT5_IMAGE_INSTALL_append_imxgpu3d = " packagegroup-qt5-webengine"
+# If bits/c++config.h error, run: sudo apt-get install g++-multilib
 
 IMAGE_INSTALL += " \
     ${QT5_IMAGE_INSTALL} \

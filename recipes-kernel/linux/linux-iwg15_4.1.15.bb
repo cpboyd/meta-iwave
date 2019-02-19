@@ -9,9 +9,6 @@ require recipes-kernel/linux/linux-imx.inc
 
 DEPENDS += "lzop-native bc-native"
 
-# SRCBRANCH = "iwg15_4.1.15"
-# SRCREV = "eab69199c24cf9bece2d88c52535829e35ce1014"
-# KERNEL_SRC ?= "git://github.com/cpboyd/linux-iwave.git;protocol=git"
 SRCBRANCH = "imx_4.1.15_2.0.0_ga"
 LOCALVERSION = "-${SRCBRANCH}"
 KERNEL_SRC ?= "git://source.codeaurora.org/external/imx/linux-imx.git;protocol=https"
@@ -23,7 +20,7 @@ SRC_URI += " \
 
 DEFAULT_PREFERENCE = "1"
 
-KERNEL_DEFCONFIG = "${S}/arch/arm/configs/${IWG15_KERNEL_DEFCONFIG}"
+KERNEL_DEFCONFIG_imx6qdl-iwg15-sm = "${S}/arch/arm/configs/iw_rainbowg15m_sm_defconfig"
 
 DO_CONFIG_V7_COPY = "no"
 DO_CONFIG_V7_COPY_mx6 = "yes"
@@ -37,5 +34,5 @@ do_copy_defconfig () {
    cp ${KERNEL_DEFCONFIG} ${B}/../defconfig
 }
 
-COMPATIBLE_MACHINE = "(mx6|mx6ul|mx7)"
+COMPATIBLE_MACHINE = "(imx6qdl-iwg15-sm)"
 
