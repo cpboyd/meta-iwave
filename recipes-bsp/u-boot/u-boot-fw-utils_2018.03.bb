@@ -1,9 +1,9 @@
 require u-boot-common_${PV}.inc
 require u-boot-fw-utils.inc
 
-SRC_URI += "file://default-gcc.patch"
+EXTRA_OEMAKE_class-cross = 'HOSTCC="${CC} ${CFLAGS} ${LDFLAGS}" V=1'
 
 do_compile () {
 	oe_runmake ${UBOOT_MACHINE}
-	oe_runmake env
+	oe_runmake envtools
 }
