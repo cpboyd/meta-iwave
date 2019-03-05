@@ -1,6 +1,24 @@
-diff -Naur A/arch/arm/boot/dts/imx6dl_iwg15.dtsi B/arch/arm/boot/dts/imx6dl_iwg15.dtsi
---- A/arch/arm/boot/dts/imx6dl_iwg15.dtsi	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6dl_iwg15.dtsi	2017-04-28 17:49:24.216097863 +0530
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 742a8f50856c..3db8cd31634a 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -467,6 +467,11 @@ dtb-$(CONFIG_SOC_VF610) += \
+ 	imx6sx-sabreauto-m4.dtb \
+ 	vf610-cosmic.dtb \
+ 	vf610-twr.dtb
++dtb-$(CONFIG_IWG15M_SM) += \
++	imx6qd-iwg15m-sm_ldoactive.dtb \
++	imx6dls-iwg15m-sm_ldoactive.dtb \
++	imx6qd-iwg15m-sm_ldobypass.dtb \
++	imx6dls-iwg15m-sm_ldobypass.dtb 
+ dtb-$(CONFIG_ARCH_MXS) += \
+ 	imx23-evk.dtb \
+ 	imx23-olinuxino.dtb \
+diff --git a/arch/arm/boot/dts/imx6dl_iwg15.dtsi b/arch/arm/boot/dts/imx6dl_iwg15.dtsi
+new file mode 100644
+index 000000000000..9d4cf466f719
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6dl_iwg15.dtsi
 @@ -0,0 +1,226 @@
 +
 +/*
@@ -228,9 +246,11 @@ diff -Naur A/arch/arm/boot/dts/imx6dl_iwg15.dtsi B/arch/arm/boot/dts/imx6dl_iwg1
 +		      "ldb_di0_div_7", "ldb_di1_div_7",
 +		      "ldb_di0_div_sel", "ldb_di1_div_sel";
 +};
-diff -Naur A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts B/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
---- A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts	2017-04-19 15:05:50.802870590 +0530
+diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
+new file mode 100644
+index 000000000000..b3a552a1d2f7
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
 @@ -0,0 +1,56 @@
 +/*
 + * Copyright (c) 2017-2018 iWave Systems Technologies Pvt. Ltd. 
@@ -288,9 +308,11 @@ diff -Naur A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts B/arch/arm/boot/d
 +&gpc {
 +        fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
 +};
-diff -Naur A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts B/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
---- A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts	2017-04-19 15:05:53.546870643 +0530
+diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
+new file mode 100644
+index 000000000000..8b01fd762dc7
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
 @@ -0,0 +1,65 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -357,9 +379,244 @@ diff -Naur A/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts B/arch/arm/boot/d
 +        arm-supply = <&sw1a_reg>;
 +        soc-supply = <&sw1c_reg>;
 +};
-diff -Naur A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts B/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
---- A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts	2017-04-19 15:05:50.722870589 +0530
+diff --git a/arch/arm/boot/dts/imx6q_iwg15.dtsi b/arch/arm/boot/dts/imx6q_iwg15.dtsi
+new file mode 100644
+index 000000000000..bed7eafe48c9
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6q_iwg15.dtsi
+@@ -0,0 +1,227 @@
++/*
++ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include "imx6q-pinfunc.h"
++#include "imx6qdl_iwg15.dtsi"
++
++/ {
++	aliases {
++		ipu1 = &ipu2;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu0: cpu@0 {
++			compatible = "arm,cortex-a9";
++			device_type = "cpu";
++			reg = <0>;
++			next-level-cache = <&L2>;
++			operating-points = <
++				/* kHz    uV */
++				1200000 1275000
++				996000  1250000
++				852000  1250000
++				792000  1175000
++				396000  975000
++			>;
++			fsl,soc-operating-points = <
++				/* ARM kHz  SOC-PU uV */
++				1200000 1275000
++				996000	1250000
++				852000	1250000
++				792000	1175000
++				396000	1175000
++			>;
++			clock-latency = <61036>; /* two CLK32 periods */
++			clocks = <&clks IMX6QDL_CLK_ARM>,
++				 <&clks IMX6QDL_CLK_PLL2_PFD2_396M>,
++				 <&clks IMX6QDL_CLK_STEP>,
++				 <&clks IMX6QDL_CLK_PLL1_SW>,
++				 <&clks IMX6QDL_CLK_PLL1_SYS>,
++				 <&clks IMX6QDL_CLK_PLL1>,
++				 <&clks IMX6QDL_PLL1_BYPASS>,
++				 <&clks IMX6QDL_PLL1_BYPASS_SRC>,
++				 <&clks IMX6QDL_CLK_VPU_AXI_PODF>;
++			clock-names = "arm", "pll2_pfd2_396m", "step",
++				      "pll1_sw", "pll1_sys", "pll1",
++				      "pll1_bypass", "pll1_bypass_src",
++				      "vpu_axi_podf";
++			arm-supply = <&reg_arm>;
++			pu-supply = <&reg_pu>;
++			soc-supply = <&reg_soc>;
++		};
++
++		cpu@1 {
++			compatible = "arm,cortex-a9";
++			device_type = "cpu";
++			reg = <1>;
++			next-level-cache = <&L2>;
++		};
++
++		cpu@2 {
++			compatible = "arm,cortex-a9";
++			device_type = "cpu";
++			reg = <2>;
++			next-level-cache = <&L2>;
++		};
++
++		cpu@3 {
++			compatible = "arm,cortex-a9";
++			device_type = "cpu";
++			reg = <3>;
++			next-level-cache = <&L2>;
++		};
++	};
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		/* global autoconfigured region for contiguous allocations */
++		linux,cma {
++			compatible = "shared-dma-pool";
++			reusable;
++			size = <0x14000000>;
++			linux,cma-default;
++		};
++	};
++
++	soc {
++		busfreq: busfreq {
++			compatible = "fsl,imx_busfreq";
++			clocks = <&clks 171>, <&clks 6>, <&clks 11>, <&clks 104>, <&clks 172>, <&clks 58>,
++				<&clks 18>, <&clks 60>, <&clks 20>, <&clks 3>;
++			clock-names = "pll2_bus", "pll2_pfd2_396m", "pll2_198m", "arm", "pll3_usb_otg", "periph",
++				"periph_pre", "periph_clk2", "periph_clk2_sel", "osc";
++			interrupts = <0 107 0x04>, <0 112 0x4>, <0 113 0x4>, <0 114 0x4>;
++			interrupt-names = "irq_busfreq_0", "irq_busfreq_1", "irq_busfreq_2", "irq_busfreq_3";
++			fsl,max_ddr_freq = <528000000>;
++		};
++
++                gpu@00130000 {
++			compatible = "fsl,imx6q-gpu";
++			reg = <0x00130000 0x4000>, <0x00134000 0x4000>,
++			      <0x02204000 0x4000>, <0x0 0x0>,
++			      <0x0 0x8000000>;
++			reg-names = "iobase_3d", "iobase_2d",
++				    "iobase_vg", "phys_baseaddr",
++				    "contiguous_mem";
++			interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>,
++				     <0 10 IRQ_TYPE_LEVEL_HIGH>,
++				     <0 11 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "irq_3d", "irq_2d", "irq_vg";
++			clocks = <&clks IMX6QDL_CLK_GPU2D_AXI>, <&clks IMX6QDL_CLK_OPENVG_AXI>,
++				 <&clks IMX6QDL_CLK_GPU3D_AXI>, <&clks IMX6QDL_CLK_GPU2D_CORE>,
++				 <&clks IMX6QDL_CLK_GPU3D_CORE>, <&clks IMX6QDL_CLK_GPU3D_SHADER>;
++			clock-names = "gpu2d_axi_clk", "openvg_axi_clk",
++				      "gpu3d_axi_clk", "gpu2d_clk",
++				      "gpu3d_clk", "gpu3d_shader_clk";
++			resets = <&src 0>, <&src 3>, <&src 3>;
++			reset-names = "gpu3d", "gpu2d", "gpuvg";
++			power-domains = <&gpc 1>;
++			pu-supply = <&reg_pu>;
++		};
++
++		ocram: sram@00905000 {
++			compatible = "mmio-sram";
++			reg = <0x00905000 0x3B000>;
++			clocks = <&clks IMX6QDL_CLK_OCRAM>;
++		};
++
++		aips-bus@02000000 { /* AIPS1 */
++			spba-bus@02000000 {
++				ecspi5: ecspi@02018000 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
++					reg = <0x02018000 0x4000>;
++					interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>;
++					clocks = <&clks IMX6Q_CLK_ECSPI5>,
++						 <&clks IMX6Q_CLK_ECSPI5>;
++					clock-names = "ipg", "per";
++					dmas = <&sdma 11 7 1>, <&sdma 12 7 2>;
++					dma-names = "rx", "tx";
++					status = "disabled";
++				};
++			};
++
++			vpu@02040000 {
++				status = "okay";
++			};
++
++			iomuxc: iomuxc@020e0000 {
++				compatible = "fsl,imx6q-iomuxc";
++			};
++		};
++
++		aips-bus@02100000 { /* AIPS2 */
++			mipi_dsi: mipi@021e0000 {
++				compatible = "fsl,imx6q-mipi-dsi";
++				reg = <0x021e0000 0x4000>;
++				interrupts = <0 102 0x04>;
++				gpr = <&gpr>;
++				clocks = <&clks IMX6QDL_CLK_HSI_TX>, <&clks IMX6QDL_CLK_VIDEO_27M>;
++				clock-names = "mipi_pllref_clk", "mipi_cfg_clk";
++				status = "disabled";
++			};
++		};
++
++		sata: sata@02200000 {
++			compatible = "fsl,imx6q-ahci";
++			reg = <0x02200000 0x4000>;
++			interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clks IMX6QDL_CLK_SATA>,
++				 <&clks IMX6QDL_CLK_SATA_REF_100M>,
++				 <&clks IMX6QDL_CLK_AHB>;
++			clock-names = "sata", "sata_ref", "ahb";
++			status = "disabled";
++		};
++
++		ipu2: ipu@02800000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "fsl,imx6q-ipu";
++			reg = <0x02800000 0x400000>;
++			interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>,
++				     <0 7 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clks IMX6QDL_CLK_IPU2>,
++				 <&clks IMX6QDL_CLK_IPU2_DI0>, <&clks IMX6QDL_CLK_IPU2_DI1>,
++				 <&clks IMX6QDL_CLK_IPU2_DI0_SEL>, <&clks IMX6QDL_CLK_IPU2_DI1_SEL>,
++				 <&clks IMX6QDL_CLK_LDB_DI0>, <&clks IMX6QDL_CLK_LDB_DI1>;
++			clock-names = "bus",
++				      "di0", "di1",
++				      "di0_sel", "di1_sel",
++				      "ldb_di0", "ldb_di1";
++			resets = <&src 4>;
++			bypass_reset = <0>;
++		};
++	};
++};
++
++&ldb {
++	compatible = "fsl,imx6q-ldb", "fsl,imx53-ldb";
++
++	clocks = <&clks IMX6QDL_CLK_LDB_DI0>, <&clks IMX6QDL_CLK_LDB_DI1>,
++		 <&clks IMX6QDL_CLK_IPU1_DI0_SEL>, <&clks IMX6QDL_CLK_IPU1_DI1_SEL>,
++		 <&clks IMX6QDL_CLK_IPU2_DI0_SEL>, <&clks IMX6QDL_CLK_IPU2_DI1_SEL>,
++		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_3_5>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_3_5>,
++		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_7>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_7>,
++		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_SEL>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_SEL>;
++	clock-names = "ldb_di0", "ldb_di1",
++		      "di0_sel", "di1_sel",
++		      "di2_sel", "di3_sel",
++		      "ldb_di0_div_3_5", "ldb_di1_div_3_5",
++		      "ldb_di0_div_7", "ldb_di1_div_7",
++		      "ldb_di0_div_sel", "ldb_di1_div_sel";
++
++};
+diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
+new file mode 100644
+index 000000000000..f12503b11087
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
 @@ -0,0 +1,91 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -452,9 +709,11 @@ diff -Naur A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts B/arch/arm/boot/dt
 +&gpc {
 +        fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
 +};
-diff -Naur A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts B/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
---- A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts	2017-04-19 15:05:50.774870590 +0530
+diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
+new file mode 100644
+index 000000000000..a9aeb9940ed2
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
 @@ -0,0 +1,92 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -548,9 +807,522 @@ diff -Naur A/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts B/arch/arm/boot/dt
 +        arm-supply = <&sw1a_reg>;
 +        soc-supply = <&sw1c_reg>;
 +};
-diff -Naur A/arch/arm/boot/dts/imx6qdl.dtsi B/arch/arm/boot/dts/imx6qdl.dtsi
---- A/arch/arm/boot/dts/imx6qdl.dtsi	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/boot/dts/imx6qdl.dtsi	2017-04-19 15:05:50.810870590 +0530
+diff --git a/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
+new file mode 100644
+index 000000000000..e26754e2bc49
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
+@@ -0,0 +1,506 @@
++/*
++ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++        aliases {
++                mxcfb0 = &mxcfb1;
++                mxcfb1 = &mxcfb2;
++                mxcfb2 = &mxcfb3;
++        };
++
++        memory: memory {
++                reg = <0x10000000 0x40000000>;
++        };
++
++        regulators {
++                compatible = "simple-bus";
++
++                reg_2p5v: 2p5v {
++                        compatible = "regulator-fixed";
++                        regulator-name = "2P5V";
++                        regulator-min-microvolt = <2500000>;
++                        regulator-max-microvolt = <2500000>;
++                        regulator-always-on;
++                };
++
++                reg_3p3v: 3p3v {
++                        compatible = "regulator-fixed";
++                        regulator-name = "3P3V";
++                        regulator-min-microvolt = <3300000>;
++                        regulator-max-microvolt = <3300000>;
++                        regulator-always-on;
++                };
++
++                reg_0p0v: 0p0v {
++                        compatible = "regulator-fixed";
++                        regulator-name = "0P0V";
++                        regulator-min-microvolt = <0000000>;
++                        regulator-max-microvolt = <0000000>;
++                        regulator-always-on;
++                };
++
++        };
++
++        sound-hdmi {
++                compatible = "fsl,imx6q-audio-hdmi",
++                             "fsl,imx-audio-hdmi";
++                model = "imx-audio-hdmi";
++                hdmi-controller = <&hdmi_audio>;
++        };
++
++	sound {
++                compatible = "fsl,imx6q","fsl,imx-audio-sgtl5000";
++                model = "imx6-audio-sgtl5000";
++		ssi-controller = <&ssi2>;
++                audio-codec = <&codec>;
++                audio-routing =
++                        "MIC_IN", "Mic Jack",
++                        "Mic Jack", "Mic Bias",
++                        "Headphone Jack", "HP_OUT";
++                mux-int-port = <2>;
++                mux-ext-port = <4>;
++        };
++
++        mxcfb1: fb@0 {
++                compatible = "fsl,mxc_sdc_fb";
++                disp_dev = "lcd";
++                interface_pix_fmt = "RGB24";
++                mode_str ="WQVGA";
++                default_bpp = <24>;
++                int_clk = <0>;
++                late_init = <0>;
++                status = "disabled";
++        };
++
++	mxcfb2: fb@1 {
++		compatible = "fsl,mxc_sdc_fb";
++		disp_dev = "hdmi";
++		interface_pix_fmt = "RGB24";
++		mode_str ="1920x1080M@60";
++		default_bpp = <24>;
++		int_clk = <0>;
++		late_init = <0>;
++		status = "disabled";
++	};
++		
++	mxcfb3: fb@2 {
++		compatible = "fsl,mxc_sdc_fb";
++		disp_dev = "ldb";
++		interface_pix_fmt = "RGB666";
++		default_bpp = <16>;
++		int_clk = <0>;
++		late_init = <0>;
++		status = "disabled";
++	};
++
++	lcd@0 {
++		compatible = "fsl,lcd";
++		ipu_id = <0>;
++		disp_id = <0>;
++		default_ifmt = "RGB565";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_ipu1_2>;
++		status = "okay";
++	};
++
++	backlight {
++                compatible = "pwm-backlight";
++                pwms = <&pwm3 0 5000000>;
++                brightness-levels = <0 4 8 16 32 64 128 255>;
++                default-brightness-level = <7>;
++		status = "okay";
++        };
++
++	backlight@1 {
++		compatible = "pwm-backlight";
++		pwms = <&pwm1 0 5000000>;
++		brightness-levels = <255 128 64 32 16 8 4 0>;
++		default-brightness-level = <7>;
++		status = "okay";
++        };
++
++v4l2_cap_0 {
++                compatible = "fsl,imx6q-v4l2-capture";
++                ipu_id = <0>;
++                csi_id = <0>;
++                mclk_source = <0>;
++                status = "disabled";
++        };
++
++v4l2_cap_1: v4l2_cap_1 {
++                compatible = "fsl,imx6q-v4l2-capture";
++                csi_id = <1>;
++                mclk_source = <0>;
++                status = "disabled";
++        };
++
++v4l2_out {
++                compatible = "fsl,mxc_v4l2_output";
++                status = "okay";
++        };
++
++
++unused_gpios: unused_gpios {
++                compatible = "iwave,unused-gpios";
++                status = "okay";
++        };
++
++iwg15_sm_common {
++                compatible = "iwave,g15-sm-com";
++                bom-rev-gpios = <&gpio1 5 0 &gpio5 22 0 &gpio5 23 0 &gpio5 24 0 &gpio5 25 0>;
++                som-rev-gpios = <&gpio7 0 0  &gpio7 1 0 >;
++
++                reset-gpios = <&gpio1 11 1>;
++                status = "okay";
++        };
++
++        iwg15_sm_lcd_pwr {
++                compatible = "iwave,g15-sm_lcd_pwr";
++                lcd-power = <&gpio4 13 1>;
++                lcd-reset = <&gpio7 11 1>;
++        };
++};
++
++&fec {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_enet_1>;
++        phy-mode = "rgmii";
++		fsl,magic-packet;
++        status = "okay";
++};
++
++&gpc {
++        fsl,ldo-bypass = <1>; /* use ldo-bypass, u-boot will check it and configure */
++        fsl,wdog-reset = <1>; /* watchdog select of reset source */
++};
++
++&wdog1 {
++	status = "okay";
++};
++
++&wdog2 {
++	status = "disabled";
++};
++
++&hdmi_audio {
++        status = "okay";
++};
++
++&hdmi_cec {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_hdmi_cec_4>;
++        hdmi-cec-sm = <&gpio1 21 1>;
++        status = "okay";
++};
++
++&hdmi_core {
++        ipu_id = <0>;
++        disp_id = <1>;
++        status = "okay";
++};
++
++&hdmi_video {
++        fsl,phy_reg_vlev = <0x0294>;
++        fsl,phy_reg_cksymtx = <0x800d>;
++        status = "okay";
++};
++
++&mxcfb1 {
++        status = "okay";
++};
++
++&mxcfb2 {
++        status = "okay";
++};
++
++&dcic1 {
++	dcic_id = <0>;
++	dcic_mux = "dcic-hdmi";
++	status = "okay";
++};
++
++&dcic2 {
++	dcic_id = <1>;
++	dcic_mux = "dcic-lvds0";
++	status = "okay";
++};
++
++&uart1 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_uart1_1>;
++        status = "okay";
++};
++
++&uart2 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_uart2_1>;
++        status = "okay";
++};
++
++&uart4 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_uart4_4>;
++        status = "okay";
++};
++
++&uart5 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_uart5_4>;
++        fsl,uart-has-rtscts;
++        status = "okay";
++};
++
++&usdhc3 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_usdhc3_4>;
++        cd-gpios = <&gpio3 25 1>;
++        no-1-8-v;
++        keep-power-in-suspend;
++        enable-sdio-wakeup;
++        status = "okay";
++};
++
++&usdhc4 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_usdhc4_1>;
++        bus-width = <8>;
++        non-removable;
++        no-1-8-v;
++        keep-power-in-suspend;
++        status = "okay";
++};
++
++&ecspi1 {
++        fsl,spi-num-chipselects = <1>;
++        cs-gpios = <&gpio2 30 0>;
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_ecspi1_1 &pinctrl_ecspi1_cs_1>;
++        status = "okay";
++
++        flash: m25p80@0 {
++                #address-cells = <1>;
++                #size-cells = <1>;
++                compatible = "st,m25p32";
++                spi-max-frequency = <20000000>;
++                reg = <0>;
++        };
++};
++
++&usbh1 {
++	status = "okay";
++};
++
++&usbotg {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_usbotg_4>;
++        disable-over-current;
++	srp-disable;
++	hnp-disable;
++	adp-disable;
++        status = "okay";
++};
++
++&pcie {
++        status = "okay";
++};
++
++&pwm1 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_pwm1_2>;
++        status = "okay";
++};
++
++&pwm2 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_pwm2_4>;
++        status = "okay";
++};
++&pwm3 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_pwm3_4>;
++        status = "okay";
++};
++&pwm4 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_pwm4_4>;
++        status = "okay";
++};
++
++&i2c1 {
++        clock-frequency = <400000>;
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_i2c1_1>;
++        status = "okay";
++
++};
++
++&i2c3 {
++        clock-frequency = <400000>;
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_i2c3_4>;
++        status = "okay";
++
++        hdmi: edid@50 {
++                compatible = "fsl,imx6-hdmi-i2c";
++                reg = <0x50>;
++        };
++
++		/* STMPE811 touch screen controller */
++        stmpe811@44 {
++                compatible = "st,stmpe811";
++                #address-cells = <1>;
++                #size-cells = <0>;
++                reg = <0x44>;
++                interrupts = <0 2>;
++                interrupt-parent = <&gpio2>;
++                interrupt-controller;
++                id = <0>;
++                blocks = <0x5>;
++                irq-trigger = <0x1>;
++
++                stmpe_touchscreen {
++                	compatible = "st,stmpe-ts";
++                        reg = <0>;
++                        /* 3.25 MHz ADC clock speed */
++                        st,adc-freq = <3>;
++                        /* 8 sample average control */
++                        st,ave-ctrl = <2>;
++                        /* 7 length fractional part in z */
++                        st,fraction-z = <7>;
++                        /*
++                         * 50 mA typical 80 mA max touchscreen drivers
++                         * current limit value
++                         */
++                        st,i-drive = <0>;
++                        /* 12-bit ADC */
++                        st,mod-12b = <1>;
++                        /* internal ADC reference */
++                        st,ref-sel = <0>;
++                        /* ADC converstion time: 80 clocks */
++                        st,sample-time = <4>;
++                        /* 1 ms panel driver settling time */
++                        st,settling = <3>;
++                        /* 5 ms touch detect interrupt delay */
++                        st,touch-det-delay = <4>;
++		};
++ 	};
++
++	codec: sgtl5000@0a {
++	       compatible = "fsl,sgtl5000";
++	       reg = <0x0a>;
++	       clocks = <&clks 201>;
++	       VDDA-supply = <&reg_3p3v>;
++	       VDDIO-supply = <&reg_3p3v>;
++	       VDDD-supply = <&reg_0p0v>;
++       };
++};
++
++&audmux {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_audmux_4>;
++        status = "okay";
++};
++
++&ssi2 {
++        fsl,mode = "i2s-slave";
++        status = "okay";
++};
++
++&flexcan1 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_flexcan1_4>;
++        trx-en-gpio = <&gpio6 10 1>;
++        status = "okay";
++};
++&flexcan2 {
++        pinctrl-names = "default";
++        pinctrl-0 = <&pinctrl_flexcan2_2>;
++        status = "okay";
++};
++
++&i2c1 {
++	pmic: pfuze100@08 {
++		compatible = "fsl,pfuze100";
++		reg = <0x08>;
++
++		regulators {
++			sw1a_reg: sw1ab {
++				regulator-min-microvolt = <300000>;
++				regulator-max-microvolt = <1875000>;
++				regulator-boot-on;
++				regulator-always-on;
++				regulator-ramp-delay = <6250>;
++			};
++
++			sw1c_reg: sw1c {
++				regulator-min-microvolt = <300000>;
++				regulator-max-microvolt = <1875000>;
++				regulator-boot-on;
++				regulator-always-on;
++				regulator-ramp-delay = <6250>;
++			};
++
++			sw2_reg: sw2 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw3a_reg: sw3a {
++				regulator-min-microvolt = <400000>;
++				regulator-max-microvolt = <1975000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw3b_reg: sw3b {
++				regulator-min-microvolt = <400000>;
++				regulator-max-microvolt = <1975000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			sw4_reg: sw4 {
++				regulator-min-microvolt = <800000>;
++				regulator-max-microvolt = <3300000>;
++			};
++
++			snvs_reg: vsnvs {
++				regulator-min-microvolt = <1000000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vref_reg: vrefddr {
++				regulator-boot-on;
++				regulator-always-on;
++			};
++
++			vgen4_reg: vgen4 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++			vgen5_reg: vgen5 {
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
++			};
++
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
+index 522d0178ce59..ae2a3b55ac04 100644
+--- a/arch/arm/boot/dts/imx6qdl.dtsi
++++ b/arch/arm/boot/dts/imx6qdl.dtsi
 @@ -538,9 +538,8 @@
  				reg = <0x02098000 0x4000>;
  				interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>;
@@ -563,9 +1335,11 @@ diff -Naur A/arch/arm/boot/dts/imx6qdl.dtsi B/arch/arm/boot/dts/imx6qdl.dtsi
  			};
  
  			gpio1: gpio@0209c000 {
-diff -Naur A/arch/arm/boot/dts/imx6qdl_iwg15.dtsi B/arch/arm/boot/dts/imx6qdl_iwg15.dtsi
---- A/arch/arm/boot/dts/imx6qdl_iwg15.dtsi	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6qdl_iwg15.dtsi	2017-04-19 15:27:22.626895370 +0530
+diff --git a/arch/arm/boot/dts/imx6qdl_iwg15.dtsi b/arch/arm/boot/dts/imx6qdl_iwg15.dtsi
+new file mode 100644
+index 000000000000..f73603ec78cb
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6qdl_iwg15.dtsi
 @@ -0,0 +1,1608 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -2175,765 +2949,11 @@ diff -Naur A/arch/arm/boot/dts/imx6qdl_iwg15.dtsi B/arch/arm/boot/dts/imx6qdl_iw
 +		};
 +	};
 +};
-diff -Naur A/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi B/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
---- A/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi	2017-04-25 11:27:07.444825558 +0530
-@@ -0,0 +1,506 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * The code contained herein is licensed under the GNU General Public
-+ * License. You may obtain a copy of the GNU General Public License
-+ * Version 2 or later at the following locations:
-+ *
-+ * http://www.opensource.org/licenses/gpl-license.html
-+ * http://www.gnu.org/copyleft/gpl.html
-+ */
-+
-+#include <dt-bindings/gpio/gpio.h>
-+#include <dt-bindings/input/input.h>
-+
-+/ {
-+        aliases {
-+                mxcfb0 = &mxcfb1;
-+                mxcfb1 = &mxcfb2;
-+                mxcfb2 = &mxcfb3;
-+        };
-+
-+        memory: memory {
-+                reg = <0x10000000 0x40000000>;
-+        };
-+
-+        regulators {
-+                compatible = "simple-bus";
-+
-+                reg_2p5v: 2p5v {
-+                        compatible = "regulator-fixed";
-+                        regulator-name = "2P5V";
-+                        regulator-min-microvolt = <2500000>;
-+                        regulator-max-microvolt = <2500000>;
-+                        regulator-always-on;
-+                };
-+
-+                reg_3p3v: 3p3v {
-+                        compatible = "regulator-fixed";
-+                        regulator-name = "3P3V";
-+                        regulator-min-microvolt = <3300000>;
-+                        regulator-max-microvolt = <3300000>;
-+                        regulator-always-on;
-+                };
-+
-+                reg_0p0v: 0p0v {
-+                        compatible = "regulator-fixed";
-+                        regulator-name = "0P0V";
-+                        regulator-min-microvolt = <0000000>;
-+                        regulator-max-microvolt = <0000000>;
-+                        regulator-always-on;
-+                };
-+
-+        };
-+
-+        sound-hdmi {
-+                compatible = "fsl,imx6q-audio-hdmi",
-+                             "fsl,imx-audio-hdmi";
-+                model = "imx-audio-hdmi";
-+                hdmi-controller = <&hdmi_audio>;
-+        };
-+
-+	sound {
-+                compatible = "fsl,imx6q","fsl,imx-audio-sgtl5000";
-+                model = "imx6-audio-sgtl5000";
-+		ssi-controller = <&ssi2>;
-+                audio-codec = <&codec>;
-+                audio-routing =
-+                        "MIC_IN", "Mic Jack",
-+                        "Mic Jack", "Mic Bias",
-+                        "Headphone Jack", "HP_OUT";
-+                mux-int-port = <2>;
-+                mux-ext-port = <4>;
-+        };
-+
-+        mxcfb1: fb@0 {
-+                compatible = "fsl,mxc_sdc_fb";
-+                disp_dev = "lcd";
-+                interface_pix_fmt = "RGB24";
-+                mode_str ="WQVGA";
-+                default_bpp = <24>;
-+                int_clk = <0>;
-+                late_init = <0>;
-+                status = "disabled";
-+        };
-+
-+	mxcfb2: fb@1 {
-+		compatible = "fsl,mxc_sdc_fb";
-+		disp_dev = "hdmi";
-+		interface_pix_fmt = "RGB24";
-+		mode_str ="1920x1080M@60";
-+		default_bpp = <24>;
-+		int_clk = <0>;
-+		late_init = <0>;
-+		status = "disabled";
-+	};
-+		
-+	mxcfb3: fb@2 {
-+		compatible = "fsl,mxc_sdc_fb";
-+		disp_dev = "ldb";
-+		interface_pix_fmt = "RGB666";
-+		default_bpp = <16>;
-+		int_clk = <0>;
-+		late_init = <0>;
-+		status = "disabled";
-+	};
-+
-+	lcd@0 {
-+		compatible = "fsl,lcd";
-+		ipu_id = <0>;
-+		disp_id = <0>;
-+		default_ifmt = "RGB565";
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&pinctrl_ipu1_2>;
-+		status = "okay";
-+	};
-+
-+	backlight {
-+                compatible = "pwm-backlight";
-+                pwms = <&pwm3 0 5000000>;
-+                brightness-levels = <0 4 8 16 32 64 128 255>;
-+                default-brightness-level = <7>;
-+		status = "okay";
-+        };
-+
-+	backlight@1 {
-+		compatible = "pwm-backlight";
-+		pwms = <&pwm1 0 5000000>;
-+		brightness-levels = <255 128 64 32 16 8 4 0>;
-+		default-brightness-level = <7>;
-+		status = "okay";
-+        };
-+
-+v4l2_cap_0 {
-+                compatible = "fsl,imx6q-v4l2-capture";
-+                ipu_id = <0>;
-+                csi_id = <0>;
-+                mclk_source = <0>;
-+                status = "disabled";
-+        };
-+
-+v4l2_cap_1: v4l2_cap_1 {
-+                compatible = "fsl,imx6q-v4l2-capture";
-+                csi_id = <1>;
-+                mclk_source = <0>;
-+                status = "disabled";
-+        };
-+
-+v4l2_out {
-+                compatible = "fsl,mxc_v4l2_output";
-+                status = "okay";
-+        };
-+
-+
-+unused_gpios: unused_gpios {
-+                compatible = "iwave,unused-gpios";
-+                status = "okay";
-+        };
-+
-+iwg15_sm_common {
-+                compatible = "iwave,g15-sm-com";
-+                bom-rev-gpios = <&gpio1 5 0 &gpio5 22 0 &gpio5 23 0 &gpio5 24 0 &gpio5 25 0>;
-+                som-rev-gpios = <&gpio7 0 0  &gpio7 1 0 >;
-+
-+                reset-gpios = <&gpio1 11 1>;
-+                status = "okay";
-+        };
-+
-+        iwg15_sm_lcd_pwr {
-+                compatible = "iwave,g15-sm_lcd_pwr";
-+                lcd-power = <&gpio4 13 1>;
-+                lcd-reset = <&gpio7 11 1>;
-+        };
-+};
-+
-+&fec {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_enet_1>;
-+        phy-mode = "rgmii";
-+		fsl,magic-packet;
-+        status = "okay";
-+};
-+
-+&gpc {
-+        fsl,ldo-bypass = <1>; /* use ldo-bypass, u-boot will check it and configure */
-+        fsl,wdog-reset = <1>; /* watchdog select of reset source */
-+};
-+
-+&wdog1 {
-+	status = "okay";
-+};
-+
-+&wdog2 {
-+	status = "disabled";
-+};
-+
-+&hdmi_audio {
-+        status = "okay";
-+};
-+
-+&hdmi_cec {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_hdmi_cec_4>;
-+        hdmi-cec-sm = <&gpio1 21 1>;
-+        status = "okay";
-+};
-+
-+&hdmi_core {
-+        ipu_id = <0>;
-+        disp_id = <1>;
-+        status = "okay";
-+};
-+
-+&hdmi_video {
-+        fsl,phy_reg_vlev = <0x0294>;
-+        fsl,phy_reg_cksymtx = <0x800d>;
-+        status = "okay";
-+};
-+
-+&mxcfb1 {
-+        status = "okay";
-+};
-+
-+&mxcfb2 {
-+        status = "okay";
-+};
-+
-+&dcic1 {
-+	dcic_id = <0>;
-+	dcic_mux = "dcic-hdmi";
-+	status = "okay";
-+};
-+
-+&dcic2 {
-+	dcic_id = <1>;
-+	dcic_mux = "dcic-lvds0";
-+	status = "okay";
-+};
-+
-+&uart1 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_uart1_1>;
-+        status = "okay";
-+};
-+
-+&uart2 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_uart2_1>;
-+        status = "okay";
-+};
-+
-+&uart4 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_uart4_4>;
-+        status = "okay";
-+};
-+
-+&uart5 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_uart5_4>;
-+        fsl,uart-has-rtscts;
-+        status = "okay";
-+};
-+
-+&usdhc3 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_usdhc3_4>;
-+        cd-gpios = <&gpio3 25 1>;
-+        no-1-8-v;
-+        keep-power-in-suspend;
-+        enable-sdio-wakeup;
-+        status = "okay";
-+};
-+
-+&usdhc4 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_usdhc4_1>;
-+        bus-width = <8>;
-+        non-removable;
-+        no-1-8-v;
-+        keep-power-in-suspend;
-+        status = "okay";
-+};
-+
-+&ecspi1 {
-+        fsl,spi-num-chipselects = <1>;
-+        cs-gpios = <&gpio2 30 0>;
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_ecspi1_1 &pinctrl_ecspi1_cs_1>;
-+        status = "okay";
-+
-+        flash: m25p80@0 {
-+                #address-cells = <1>;
-+                #size-cells = <1>;
-+                compatible = "st,m25p32";
-+                spi-max-frequency = <20000000>;
-+                reg = <0>;
-+        };
-+};
-+
-+&usbh1 {
-+	status = "okay";
-+};
-+
-+&usbotg {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_usbotg_4>;
-+        disable-over-current;
-+	srp-disable;
-+	hnp-disable;
-+	adp-disable;
-+        status = "okay";
-+};
-+
-+&pcie {
-+        status = "okay";
-+};
-+
-+&pwm1 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_pwm1_2>;
-+        status = "okay";
-+};
-+
-+&pwm2 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_pwm2_4>;
-+        status = "okay";
-+};
-+&pwm3 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_pwm3_4>;
-+        status = "okay";
-+};
-+&pwm4 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_pwm4_4>;
-+        status = "okay";
-+};
-+
-+&i2c1 {
-+        clock-frequency = <400000>;
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_i2c1_1>;
-+        status = "okay";
-+
-+};
-+
-+&i2c3 {
-+        clock-frequency = <400000>;
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_i2c3_4>;
-+        status = "okay";
-+
-+        hdmi: edid@50 {
-+                compatible = "fsl,imx6-hdmi-i2c";
-+                reg = <0x50>;
-+        };
-+
-+		/* STMPE811 touch screen controller */
-+        stmpe811@44 {
-+                compatible = "st,stmpe811";
-+                #address-cells = <1>;
-+                #size-cells = <0>;
-+                reg = <0x44>;
-+                interrupts = <0 2>;
-+                interrupt-parent = <&gpio2>;
-+                interrupt-controller;
-+                id = <0>;
-+                blocks = <0x5>;
-+                irq-trigger = <0x1>;
-+
-+                stmpe_touchscreen {
-+                	compatible = "st,stmpe-ts";
-+                        reg = <0>;
-+                        /* 3.25 MHz ADC clock speed */
-+                        st,adc-freq = <3>;
-+                        /* 8 sample average control */
-+                        st,ave-ctrl = <2>;
-+                        /* 7 length fractional part in z */
-+                        st,fraction-z = <7>;
-+                        /*
-+                         * 50 mA typical 80 mA max touchscreen drivers
-+                         * current limit value
-+                         */
-+                        st,i-drive = <0>;
-+                        /* 12-bit ADC */
-+                        st,mod-12b = <1>;
-+                        /* internal ADC reference */
-+                        st,ref-sel = <0>;
-+                        /* ADC converstion time: 80 clocks */
-+                        st,sample-time = <4>;
-+                        /* 1 ms panel driver settling time */
-+                        st,settling = <3>;
-+                        /* 5 ms touch detect interrupt delay */
-+                        st,touch-det-delay = <4>;
-+		};
-+ 	};
-+
-+	codec: sgtl5000@0a {
-+	       compatible = "fsl,sgtl5000";
-+	       reg = <0x0a>;
-+	       clocks = <&clks 201>;
-+	       VDDA-supply = <&reg_3p3v>;
-+	       VDDIO-supply = <&reg_3p3v>;
-+	       VDDD-supply = <&reg_0p0v>;
-+       };
-+};
-+
-+&audmux {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_audmux_4>;
-+        status = "okay";
-+};
-+
-+&ssi2 {
-+        fsl,mode = "i2s-slave";
-+        status = "okay";
-+};
-+
-+&flexcan1 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_flexcan1_4>;
-+        trx-en-gpio = <&gpio6 10 1>;
-+        status = "okay";
-+};
-+&flexcan2 {
-+        pinctrl-names = "default";
-+        pinctrl-0 = <&pinctrl_flexcan2_2>;
-+        status = "okay";
-+};
-+
-+&i2c1 {
-+	pmic: pfuze100@08 {
-+		compatible = "fsl,pfuze100";
-+		reg = <0x08>;
-+
-+		regulators {
-+			sw1a_reg: sw1ab {
-+				regulator-min-microvolt = <300000>;
-+				regulator-max-microvolt = <1875000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+				regulator-ramp-delay = <6250>;
-+			};
-+
-+			sw1c_reg: sw1c {
-+				regulator-min-microvolt = <300000>;
-+				regulator-max-microvolt = <1875000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+				regulator-ramp-delay = <6250>;
-+			};
-+
-+			sw2_reg: sw2 {
-+				regulator-min-microvolt = <800000>;
-+				regulator-max-microvolt = <3300000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+			};
-+
-+			sw3a_reg: sw3a {
-+				regulator-min-microvolt = <400000>;
-+				regulator-max-microvolt = <1975000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+			};
-+
-+			sw3b_reg: sw3b {
-+				regulator-min-microvolt = <400000>;
-+				regulator-max-microvolt = <1975000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+			};
-+
-+			sw4_reg: sw4 {
-+				regulator-min-microvolt = <800000>;
-+				regulator-max-microvolt = <3300000>;
-+			};
-+
-+			snvs_reg: vsnvs {
-+				regulator-min-microvolt = <1000000>;
-+				regulator-max-microvolt = <3000000>;
-+				regulator-boot-on;
-+				regulator-always-on;
-+			};
-+
-+			vref_reg: vrefddr {
-+				regulator-boot-on;
-+				regulator-always-on;
-+			};
-+
-+			vgen4_reg: vgen4 {
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <3300000>;
-+				regulator-always-on;
-+			};
-+
-+			vgen5_reg: vgen5 {
-+				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <3300000>;
-+				regulator-always-on;
-+			};
-+
-+		};
-+	};
-+};
-diff -Naur A/arch/arm/boot/dts/imx6q_iwg15.dtsi B/arch/arm/boot/dts/imx6q_iwg15.dtsi
---- A/arch/arm/boot/dts/imx6q_iwg15.dtsi	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/boot/dts/imx6q_iwg15.dtsi	2017-04-24 21:05:50.404919805 +0530
-@@ -0,0 +1,227 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ *
-+ */
-+
-+#include <dt-bindings/interrupt-controller/irq.h>
-+#include "imx6q-pinfunc.h"
-+#include "imx6qdl_iwg15.dtsi"
-+
-+/ {
-+	aliases {
-+		ipu1 = &ipu2;
-+	};
-+
-+	cpus {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		cpu0: cpu@0 {
-+			compatible = "arm,cortex-a9";
-+			device_type = "cpu";
-+			reg = <0>;
-+			next-level-cache = <&L2>;
-+			operating-points = <
-+				/* kHz    uV */
-+				1200000 1275000
-+				996000  1250000
-+				852000  1250000
-+				792000  1175000
-+				396000  975000
-+			>;
-+			fsl,soc-operating-points = <
-+				/* ARM kHz  SOC-PU uV */
-+				1200000 1275000
-+				996000	1250000
-+				852000	1250000
-+				792000	1175000
-+				396000	1175000
-+			>;
-+			clock-latency = <61036>; /* two CLK32 periods */
-+			clocks = <&clks IMX6QDL_CLK_ARM>,
-+				 <&clks IMX6QDL_CLK_PLL2_PFD2_396M>,
-+				 <&clks IMX6QDL_CLK_STEP>,
-+				 <&clks IMX6QDL_CLK_PLL1_SW>,
-+				 <&clks IMX6QDL_CLK_PLL1_SYS>,
-+				 <&clks IMX6QDL_CLK_PLL1>,
-+				 <&clks IMX6QDL_PLL1_BYPASS>,
-+				 <&clks IMX6QDL_PLL1_BYPASS_SRC>,
-+				 <&clks IMX6QDL_CLK_VPU_AXI_PODF>;
-+			clock-names = "arm", "pll2_pfd2_396m", "step",
-+				      "pll1_sw", "pll1_sys", "pll1",
-+				      "pll1_bypass", "pll1_bypass_src",
-+				      "vpu_axi_podf";
-+			arm-supply = <&reg_arm>;
-+			pu-supply = <&reg_pu>;
-+			soc-supply = <&reg_soc>;
-+		};
-+
-+		cpu@1 {
-+			compatible = "arm,cortex-a9";
-+			device_type = "cpu";
-+			reg = <1>;
-+			next-level-cache = <&L2>;
-+		};
-+
-+		cpu@2 {
-+			compatible = "arm,cortex-a9";
-+			device_type = "cpu";
-+			reg = <2>;
-+			next-level-cache = <&L2>;
-+		};
-+
-+		cpu@3 {
-+			compatible = "arm,cortex-a9";
-+			device_type = "cpu";
-+			reg = <3>;
-+			next-level-cache = <&L2>;
-+		};
-+	};
-+
-+	reserved-memory {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges;
-+
-+		/* global autoconfigured region for contiguous allocations */
-+		linux,cma {
-+			compatible = "shared-dma-pool";
-+			reusable;
-+			size = <0x14000000>;
-+			linux,cma-default;
-+		};
-+	};
-+
-+	soc {
-+		busfreq: busfreq {
-+			compatible = "fsl,imx_busfreq";
-+			clocks = <&clks 171>, <&clks 6>, <&clks 11>, <&clks 104>, <&clks 172>, <&clks 58>,
-+				<&clks 18>, <&clks 60>, <&clks 20>, <&clks 3>;
-+			clock-names = "pll2_bus", "pll2_pfd2_396m", "pll2_198m", "arm", "pll3_usb_otg", "periph",
-+				"periph_pre", "periph_clk2", "periph_clk2_sel", "osc";
-+			interrupts = <0 107 0x04>, <0 112 0x4>, <0 113 0x4>, <0 114 0x4>;
-+			interrupt-names = "irq_busfreq_0", "irq_busfreq_1", "irq_busfreq_2", "irq_busfreq_3";
-+			fsl,max_ddr_freq = <528000000>;
-+		};
-+
-+                gpu@00130000 {
-+			compatible = "fsl,imx6q-gpu";
-+			reg = <0x00130000 0x4000>, <0x00134000 0x4000>,
-+			      <0x02204000 0x4000>, <0x0 0x0>,
-+			      <0x0 0x8000000>;
-+			reg-names = "iobase_3d", "iobase_2d",
-+				    "iobase_vg", "phys_baseaddr",
-+				    "contiguous_mem";
-+			interrupts = <0 9 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 10 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 11 IRQ_TYPE_LEVEL_HIGH>;
-+			interrupt-names = "irq_3d", "irq_2d", "irq_vg";
-+			clocks = <&clks IMX6QDL_CLK_GPU2D_AXI>, <&clks IMX6QDL_CLK_OPENVG_AXI>,
-+				 <&clks IMX6QDL_CLK_GPU3D_AXI>, <&clks IMX6QDL_CLK_GPU2D_CORE>,
-+				 <&clks IMX6QDL_CLK_GPU3D_CORE>, <&clks IMX6QDL_CLK_GPU3D_SHADER>;
-+			clock-names = "gpu2d_axi_clk", "openvg_axi_clk",
-+				      "gpu3d_axi_clk", "gpu2d_clk",
-+				      "gpu3d_clk", "gpu3d_shader_clk";
-+			resets = <&src 0>, <&src 3>, <&src 3>;
-+			reset-names = "gpu3d", "gpu2d", "gpuvg";
-+			power-domains = <&gpc 1>;
-+			pu-supply = <&reg_pu>;
-+		};
-+
-+		ocram: sram@00905000 {
-+			compatible = "mmio-sram";
-+			reg = <0x00905000 0x3B000>;
-+			clocks = <&clks IMX6QDL_CLK_OCRAM>;
-+		};
-+
-+		aips-bus@02000000 { /* AIPS1 */
-+			spba-bus@02000000 {
-+				ecspi5: ecspi@02018000 {
-+					#address-cells = <1>;
-+					#size-cells = <0>;
-+					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
-+					reg = <0x02018000 0x4000>;
-+					interrupts = <0 35 IRQ_TYPE_LEVEL_HIGH>;
-+					clocks = <&clks IMX6Q_CLK_ECSPI5>,
-+						 <&clks IMX6Q_CLK_ECSPI5>;
-+					clock-names = "ipg", "per";
-+					dmas = <&sdma 11 7 1>, <&sdma 12 7 2>;
-+					dma-names = "rx", "tx";
-+					status = "disabled";
-+				};
-+			};
-+
-+			vpu@02040000 {
-+				status = "okay";
-+			};
-+
-+			iomuxc: iomuxc@020e0000 {
-+				compatible = "fsl,imx6q-iomuxc";
-+			};
-+		};
-+
-+		aips-bus@02100000 { /* AIPS2 */
-+			mipi_dsi: mipi@021e0000 {
-+				compatible = "fsl,imx6q-mipi-dsi";
-+				reg = <0x021e0000 0x4000>;
-+				interrupts = <0 102 0x04>;
-+				gpr = <&gpr>;
-+				clocks = <&clks IMX6QDL_CLK_HSI_TX>, <&clks IMX6QDL_CLK_VIDEO_27M>;
-+				clock-names = "mipi_pllref_clk", "mipi_cfg_clk";
-+				status = "disabled";
-+			};
-+		};
-+
-+		sata: sata@02200000 {
-+			compatible = "fsl,imx6q-ahci";
-+			reg = <0x02200000 0x4000>;
-+			interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&clks IMX6QDL_CLK_SATA>,
-+				 <&clks IMX6QDL_CLK_SATA_REF_100M>,
-+				 <&clks IMX6QDL_CLK_AHB>;
-+			clock-names = "sata", "sata_ref", "ahb";
-+			status = "disabled";
-+		};
-+
-+		ipu2: ipu@02800000 {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+			compatible = "fsl,imx6q-ipu";
-+			reg = <0x02800000 0x400000>;
-+			interrupts = <0 8 IRQ_TYPE_LEVEL_HIGH>,
-+				     <0 7 IRQ_TYPE_LEVEL_HIGH>;
-+			clocks = <&clks IMX6QDL_CLK_IPU2>,
-+				 <&clks IMX6QDL_CLK_IPU2_DI0>, <&clks IMX6QDL_CLK_IPU2_DI1>,
-+				 <&clks IMX6QDL_CLK_IPU2_DI0_SEL>, <&clks IMX6QDL_CLK_IPU2_DI1_SEL>,
-+				 <&clks IMX6QDL_CLK_LDB_DI0>, <&clks IMX6QDL_CLK_LDB_DI1>;
-+			clock-names = "bus",
-+				      "di0", "di1",
-+				      "di0_sel", "di1_sel",
-+				      "ldb_di0", "ldb_di1";
-+			resets = <&src 4>;
-+			bypass_reset = <0>;
-+		};
-+	};
-+};
-+
-+&ldb {
-+	compatible = "fsl,imx6q-ldb", "fsl,imx53-ldb";
-+
-+	clocks = <&clks IMX6QDL_CLK_LDB_DI0>, <&clks IMX6QDL_CLK_LDB_DI1>,
-+		 <&clks IMX6QDL_CLK_IPU1_DI0_SEL>, <&clks IMX6QDL_CLK_IPU1_DI1_SEL>,
-+		 <&clks IMX6QDL_CLK_IPU2_DI0_SEL>, <&clks IMX6QDL_CLK_IPU2_DI1_SEL>,
-+		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_3_5>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_3_5>,
-+		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_7>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_7>,
-+		 <&clks IMX6QDL_CLK_LDB_DI0_DIV_SEL>, <&clks IMX6QDL_CLK_LDB_DI1_DIV_SEL>;
-+	clock-names = "ldb_di0", "ldb_di1",
-+		      "di0_sel", "di1_sel",
-+		      "di2_sel", "di3_sel",
-+		      "ldb_di0_div_3_5", "ldb_di1_div_3_5",
-+		      "ldb_di0_div_7", "ldb_di1_div_7",
-+		      "ldb_di0_div_sel", "ldb_di1_div_sel";
-+
-+};
-diff -Naur A/arch/arm/boot/dts/Makefile B/arch/arm/boot/dts/Makefile
---- A/arch/arm/boot/dts/Makefile	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/boot/dts/Makefile	2017-04-19 15:05:50.722870589 +0530
-@@ -437,6 +437,11 @@
- 	imx6sx-sabreauto-m4.dtb \
- 	vf610-cosmic.dtb \
- 	vf610-twr.dtb
-+dtb-$(CONFIG_IWG15M_SM) += \
-+	imx6qd-iwg15m-sm_ldoactive.dtb \
-+	imx6dls-iwg15m-sm_ldoactive.dtb \
-+	imx6qd-iwg15m-sm_ldobypass.dtb \
-+	imx6dls-iwg15m-sm_ldobypass.dtb 
- dtb-$(CONFIG_ARCH_MXS) += \
- 	imx23-evk.dtb \
- 	imx23-olinuxino.dtb \
-diff -Naur A/arch/arm/configs/iw_rainbowg15m_sm_defconfig B/arch/arm/configs/iw_rainbowg15m_sm_defconfig
---- A/arch/arm/configs/iw_rainbowg15m_sm_defconfig	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/configs/iw_rainbowg15m_sm_defconfig	2017-05-04 19:17:23.386774448 +0530
+diff --git a/arch/arm/configs/iw_rainbowg15m_sm_defconfig b/arch/arm/configs/iw_rainbowg15m_sm_defconfig
+new file mode 100644
+index 000000000000..deca0ed6278b
+--- /dev/null
++++ b/arch/arm/configs/iw_rainbowg15m_sm_defconfig
 @@ -0,0 +1,4361 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
@@ -7296,9 +7316,11 @@ diff -Naur A/arch/arm/configs/iw_rainbowg15m_sm_defconfig B/arch/arm/configs/iw_
 +# CONFIG_FONT_10x18 is not set
 +CONFIG_ARCH_HAS_SG_CHAIN=y
 +CONFIG_VIRTUALIZATION=y
-diff -Naur A/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig B/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig
---- A/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig	2017-04-19 15:05:26.574870125 +0530
+diff --git a/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig b/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig
+new file mode 100644
+index 000000000000..a8a10109be1c
+--- /dev/null
++++ b/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig
 @@ -0,0 +1,4224 @@
 +#
 +# Automatically generated file; DO NOT EDIT.
@@ -11524,52 +11546,11 @@ diff -Naur A/arch/arm/configs/iw_rainbowg15m_sm_mfg_defconfig B/arch/arm/configs
 +# CONFIG_FONT_10x18 is not set
 +CONFIG_ARCH_HAS_SG_CHAIN=y
 +CONFIG_VIRTUALIZATION=y
-diff -Naur A/arch/arm/mach-imx/clk-imx6q.c B/arch/arm/mach-imx/clk-imx6q.c
---- A/arch/arm/mach-imx/clk-imx6q.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/mach-imx/clk-imx6q.c	2017-04-19 15:04:55.782869535 +0530
-@@ -804,6 +804,17 @@
- 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI1_SEL], clk[IMX6QDL_CLK_IPU1_DI1_PRE]);
- 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_DI0_SEL], clk[IMX6QDL_CLK_IPU2_DI0_PRE]);
- 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_DI1_SEL], clk[IMX6QDL_CLK_IPU2_DI1_PRE]);
-+#ifdef CONFIG_IWG15
-+	/* IWG15: IPU: Added the below lines to fix for Frame buffer conflict with RGB LCD(fb0) & HDMI(fb2) */
-+	imx_clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
-+	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
-+	imx_clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
-+	imx_clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
-+	/* set epdc/pxp axi clock to 200Mhz */
-+	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
-+	imx_clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
-+
-+#else
- 	if (cpu_is_imx6dl()) {
- 		imx_clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
- 		imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
-@@ -818,6 +829,7 @@
- 		/* set eim_slow to 132Mhz */
- 		imx_clk_set_rate(clk[IMX6QDL_CLK_EIM_SLOW], 132000000);
- 	}
-+#endif
- 
- 	/*
- 	 * The gpmi needs 100MHz frequency in the EDO/Sync mode,
-diff -Naur A/arch/arm/mach-imx/common.h B/arch/arm/mach-imx/common.h
---- A/arch/arm/mach-imx/common.h	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/mach-imx/common.h	2017-04-19 16:08:29.234942686 +0530
-@@ -58,6 +58,9 @@
- void mxc_set_arch_type(unsigned int type);
- void mxc_restart(enum reboot_mode, const char *);
- void mxc_arch_reset_init(void __iomem *);
-+#ifdef CONFIG_IWG15
-+void mxc_arch_reset_init_dt(void);
-+#endif
- int mx51_revision(void);
- int mx53_revision(void);
- void imx_set_aips(void __iomem *);
-diff -Naur A/arch/arm/mach-imx/Kconfig B/arch/arm/mach-imx/Kconfig
---- A/arch/arm/mach-imx/Kconfig	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/mach-imx/Kconfig	2017-04-19 15:04:55.770869534 +0530
-@@ -694,6 +694,57 @@
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index da1f292c4731..9994880c37b3 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -703,6 +703,57 @@ config SOC_LS1021A
  
  endif
  
@@ -11627,9 +11608,67 @@ diff -Naur A/arch/arm/mach-imx/Kconfig B/arch/arm/mach-imx/Kconfig
  source "arch/arm/mach-imx/devices/Kconfig"
  
  endif
-diff -Naur A/arch/arm/mach-imx/mach-iwg15.c B/arch/arm/mach-imx/mach-iwg15.c
---- A/arch/arm/mach-imx/mach-iwg15.c	1970-01-01 05:30:00.000000000 +0530
-+++ B/arch/arm/mach-imx/mach-iwg15.c	2017-05-04 19:39:51.942754873 +0530
+diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
+index d47f4ac16c42..f885661a4011 100644
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -43,6 +43,7 @@ AFLAGS_imx6sll_low_power_idle.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SOC_IMX6SLL) += cpuidle-imx6sll.o imx6sll_low_power_idle.o
+ AFLAGS_imx7d_low_power_idle.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SOC_IMX7D) += cpuidle-imx7d.o imx7d_low_power_idle.o
++obj-$(CONFIG_IWG15) += mach-iwg15.o
+ endif
+ 
+ ifdef CONFIG_SND_IMX_SOC
+diff --git a/arch/arm/mach-imx/clk-imx6q.c b/arch/arm/mach-imx/clk-imx6q.c
+index ad0897ac5832..aec9836ade94 100644
+--- a/arch/arm/mach-imx/clk-imx6q.c
++++ b/arch/arm/mach-imx/clk-imx6q.c
+@@ -804,6 +804,17 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI1_SEL], clk[IMX6QDL_CLK_IPU1_DI1_PRE]);
+ 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_DI0_SEL], clk[IMX6QDL_CLK_IPU2_DI0_PRE]);
+ 	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_DI1_SEL], clk[IMX6QDL_CLK_IPU2_DI1_PRE]);
++#ifdef CONFIG_IWG15
++	/* IWG15: IPU: Added the below lines to fix for Frame buffer conflict with RGB LCD(fb0) & HDMI(fb2) */
++	imx_clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
++	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
++	imx_clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
++	imx_clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
++	/* set epdc/pxp axi clock to 200Mhz */
++	imx_clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
++	imx_clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
++
++#else
+ 	if (cpu_is_imx6dl()) {
+ 		imx_clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
+ 		imx_clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
+@@ -818,6 +829,7 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 		/* set eim_slow to 132Mhz */
+ 		imx_clk_set_rate(clk[IMX6QDL_CLK_EIM_SLOW], 132000000);
+ 	}
++#endif
+ 
+ 	/*
+ 	 * The gpmi needs 100MHz frequency in the EDO/Sync mode,
+diff --git a/arch/arm/mach-imx/common.h b/arch/arm/mach-imx/common.h
+index 5c29916224ea..437d2eed9145 100644
+--- a/arch/arm/mach-imx/common.h
++++ b/arch/arm/mach-imx/common.h
+@@ -58,6 +58,9 @@ void mxc_set_cpu_type(unsigned int type);
+ void mxc_set_arch_type(unsigned int type);
+ void mxc_restart(enum reboot_mode, const char *);
+ void mxc_arch_reset_init(void __iomem *);
++#ifdef CONFIG_IWG15
++void mxc_arch_reset_init_dt(void);
++#endif
+ int mx51_revision(void);
+ int mx53_revision(void);
+ void imx_set_aips(void __iomem *);
+diff --git a/arch/arm/mach-imx/mach-iwg15.c b/arch/arm/mach-imx/mach-iwg15.c
+new file mode 100644
+index 000000000000..91de8d8947f3
+--- /dev/null
++++ b/arch/arm/mach-imx/mach-iwg15.c
 @@ -0,0 +1,778 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -12409,20 +12448,10 @@ diff -Naur A/arch/arm/mach-imx/mach-iwg15.c B/arch/arm/mach-imx/mach-iwg15.c
 +	.dt_compat	= imx6_iwg15_dt_compat,
 +	.restart	= mxc_restart,
 +MACHINE_END
-diff -Naur A/arch/arm/mach-imx/Makefile B/arch/arm/mach-imx/Makefile
---- A/arch/arm/mach-imx/Makefile	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/mach-imx/Makefile	2017-04-19 15:04:55.778869535 +0530
-@@ -41,6 +41,7 @@
- obj-$(CONFIG_SOC_IMX6ULL) += imx6ull_low_power_idle.o
- AFLAGS_imx7d_low_power_idle.o :=-Wa,-march=armv7-a
- obj-$(CONFIG_SOC_IMX7D) += cpuidle-imx7d.o imx7d_low_power_idle.o
-+obj-$(CONFIG_IWG15) += mach-iwg15.o
- endif
- 
- ifdef CONFIG_SND_IMX_SOC
-diff -Naur A/arch/arm/mach-imx/system.c B/arch/arm/mach-imx/system.c
---- A/arch/arm/mach-imx/system.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/arch/arm/mach-imx/system.c	2017-04-19 15:04:55.774869534 +0530
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index 568d06e4ec62..33c49da6c009 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
 @@ -34,6 +34,10 @@
  
  static void __iomem *wdog_base;
@@ -12434,7 +12463,7 @@ diff -Naur A/arch/arm/mach-imx/system.c B/arch/arm/mach-imx/system.c
  
  /*
   * Reset the system. It is called by machine_restart().
-@@ -42,6 +46,27 @@
+@@ -42,6 +46,27 @@ void mxc_restart(enum reboot_mode mode, const char *cmd)
  {
  	unsigned int wcr_enable;
  
@@ -12462,7 +12491,7 @@ diff -Naur A/arch/arm/mach-imx/system.c B/arch/arm/mach-imx/system.c
  	if (!wdog_base)
  		goto reset_fallback;
  
-@@ -89,6 +114,42 @@
+@@ -89,6 +114,42 @@ void __init mxc_arch_reset_init(void __iomem *base)
  		clk_prepare(wdog_clk);
  }
  
@@ -12505,10 +12534,11 @@ diff -Naur A/arch/arm/mach-imx/system.c B/arch/arm/mach-imx/system.c
  #ifdef CONFIG_CACHE_L2X0
  void __init imx_init_l2cache(void)
  {
-diff -Naur A/drivers/ata/ahci_imx.c B/drivers/ata/ahci_imx.c
---- A/drivers/ata/ahci_imx.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/ata/ahci_imx.c	2017-04-19 15:14:22.606880408 +0530
-@@ -371,7 +371,11 @@
+diff --git a/drivers/ata/ahci_imx.c b/drivers/ata/ahci_imx.c
+index 3fccbed95ab2..bf784fa21106 100644
+--- a/drivers/ata/ahci_imx.c
++++ b/drivers/ata/ahci_imx.c
+@@ -371,7 +371,11 @@ static struct ata_port_operations ahci_imx_ops = {
  };
  
  static const struct ata_port_info ahci_imx_port_info = {
@@ -12520,10 +12550,40 @@ diff -Naur A/drivers/ata/ahci_imx.c B/drivers/ata/ahci_imx.c
  	.pio_mask	= ATA_PIO4,
  	.udma_mask	= ATA_UDMA6,
  	.port_ops	= &ahci_imx_ops,
-diff -Naur A/drivers/gpio/gpio-generic.c B/drivers/gpio/gpio-generic.c
---- A/drivers/gpio/gpio-generic.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/gpio/gpio-generic.c	2017-04-19 15:15:46.550882018 +0530
-@@ -139,7 +139,12 @@
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index caefe806db5e..dd6105698cdf 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -293,6 +293,12 @@ config GPIO_MXC
+ 	select GPIO_GENERIC
+ 	select GENERIC_IRQ_CHIP
+ 
++config RAINBOW_UNUSED_GPIO
++       tristate "iWave unused GPIO"
++       depends on OF_GPIO && IWG15 && GPIO_MXC
++       help
++         Say yes here to set the unused GPIOs as input in iW-RainboW-G15 platform.
++
+ config GPIO_MXS
+ 	def_bool y
+ 	depends on ARCH_MXS
+diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
+index f71bb971329c..9c6b80b384eb 100644
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -63,6 +63,7 @@ obj-$(CONFIG_GPIO_MSIC)		+= gpio-msic.o
+ obj-$(CONFIG_GPIO_MSM_V2)	+= gpio-msm-v2.o
+ obj-$(CONFIG_GPIO_MVEBU)        += gpio-mvebu.o
+ obj-$(CONFIG_GPIO_MXC)		+= gpio-mxc.o
++obj-$(RAINBOW_UNUSED_GPIO)	+= gpio-unused.o
+ obj-$(CONFIG_GPIO_MXS)		+= gpio-mxs.o
+ obj-$(CONFIG_GPIO_OCTEON)	+= gpio-octeon.o
+ obj-$(CONFIG_GPIO_OMAP)		+= gpio-omap.o
+diff --git a/drivers/gpio/gpio-generic.c b/drivers/gpio/gpio-generic.c
+index b92a690f5765..479325aec50c 100644
+--- a/drivers/gpio/gpio-generic.c
++++ b/drivers/gpio/gpio-generic.c
+@@ -139,7 +139,12 @@ static int bgpio_get(struct gpio_chip *gc, unsigned int gpio)
  {
  	struct bgpio_chip *bgc = to_bgpio_chip(gc);
  
@@ -12536,9 +12596,11 @@ diff -Naur A/drivers/gpio/gpio-generic.c B/drivers/gpio/gpio-generic.c
  }
  
  static void bgpio_set(struct gpio_chip *gc, unsigned int gpio, int val)
-diff -Naur A/drivers/gpio/gpio-unused.c B/drivers/gpio/gpio-unused.c
---- A/drivers/gpio/gpio-unused.c	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/gpio/gpio-unused.c	2017-04-19 15:15:46.562882018 +0530
+diff --git a/drivers/gpio/gpio-unused.c b/drivers/gpio/gpio-unused.c
+new file mode 100644
+index 000000000000..33aa51e7772d
+--- /dev/null
++++ b/drivers/gpio/gpio-unused.c
 @@ -0,0 +1,121 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
@@ -12661,36 +12723,10 @@ diff -Naur A/drivers/gpio/gpio-unused.c B/drivers/gpio/gpio-unused.c
 +MODULE_DESCRIPTION("iWave unused GPIO Driver");
 +MODULE_VERSION("0.1");
 +MODULE_LICENSE("GPL v2");
-diff -Naur A/drivers/gpio/Kconfig B/drivers/gpio/Kconfig
---- A/drivers/gpio/Kconfig	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/gpio/Kconfig	2017-04-19 15:15:46.554882018 +0530
-@@ -293,6 +293,12 @@
- 	select GPIO_GENERIC
- 	select GENERIC_IRQ_CHIP
- 
-+config RAINBOW_UNUSED_GPIO
-+       tristate "iWave unused GPIO"
-+       depends on OF_GPIO && IWG15 && GPIO_MXC
-+       help
-+         Say yes here to set the unused GPIOs as input in iW-RainboW-G15 platform.
-+
- config GPIO_MXS
- 	def_bool y
- 	depends on ARCH_MXS
-diff -Naur A/drivers/gpio/Makefile B/drivers/gpio/Makefile
---- A/drivers/gpio/Makefile	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/gpio/Makefile	2017-04-19 15:15:46.554882018 +0530
-@@ -63,6 +63,7 @@
- obj-$(CONFIG_GPIO_MSM_V2)	+= gpio-msm-v2.o
- obj-$(CONFIG_GPIO_MVEBU)        += gpio-mvebu.o
- obj-$(CONFIG_GPIO_MXC)		+= gpio-mxc.o
-+obj-$(RAINBOW_UNUSED_GPIO)	+= gpio-unused.o
- obj-$(CONFIG_GPIO_MXS)		+= gpio-mxs.o
- obj-$(CONFIG_GPIO_OCTEON)	+= gpio-octeon.o
- obj-$(CONFIG_GPIO_OMAP)		+= gpio-omap.o
-diff -Naur A/drivers/input/touchscreen/stmpe-ts.c B/drivers/input/touchscreen/stmpe-ts.c
---- A/drivers/input/touchscreen/stmpe-ts.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/input/touchscreen/stmpe-ts.c	2017-04-19 15:11:49.914877479 +0530
+diff --git a/drivers/input/touchscreen/stmpe-ts.c b/drivers/input/touchscreen/stmpe-ts.c
+index e4c31256a74d..926c77b08d3b 100644
+--- a/drivers/input/touchscreen/stmpe-ts.c
++++ b/drivers/input/touchscreen/stmpe-ts.c
 @@ -63,6 +63,11 @@
  #define STMPE_TS_NAME			"stmpe-ts"
  #define XY_MASK				0xfff
@@ -12703,7 +12739,7 @@ diff -Naur A/drivers/input/touchscreen/stmpe-ts.c B/drivers/input/touchscreen/st
  struct stmpe_touch {
  	struct stmpe *stmpe;
  	struct input_dev *idev;
-@@ -123,6 +128,18 @@
+@@ -123,6 +128,18 @@ static void stmpe_work(struct work_struct *work)
  	input_sync(ts->idev);
  }
  
@@ -12722,7 +12758,7 @@ diff -Naur A/drivers/input/touchscreen/stmpe-ts.c B/drivers/input/touchscreen/st
  static irqreturn_t stmpe_ts_handler(int irq, void *data)
  {
  	u8 data_set[4];
-@@ -149,7 +166,10 @@
+@@ -149,7 +166,10 @@ static irqreturn_t stmpe_ts_handler(int irq, void *data)
  	x = (data_set[0] << 4) | (data_set[1] >> 4);
  	y = ((data_set[1] & 0xf) << 8) | data_set[2];
  	z = data_set[3];
@@ -12734,9 +12770,10 @@ diff -Naur A/drivers/input/touchscreen/stmpe-ts.c B/drivers/input/touchscreen/st
  	input_report_abs(ts->idev, ABS_X, x);
  	input_report_abs(ts->idev, ABS_Y, y);
  	input_report_abs(ts->idev, ABS_PRESSURE, z);
-diff -Naur A/drivers/mmc/card/block.c B/drivers/mmc/card/block.c
---- A/drivers/mmc/card/block.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/mmc/card/block.c	2017-05-12 23:08:49.491136968 +0530
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index be776fa96e80..bccaf76cd69c 100644
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
 @@ -46,6 +46,12 @@
  
  #include "queue.h"
@@ -12750,7 +12787,7 @@ diff -Naur A/drivers/mmc/card/block.c B/drivers/mmc/card/block.c
  MODULE_ALIAS("mmc:block");
  #ifdef MODULE_PARAM_PREFIX
  #undef MODULE_PARAM_PREFIX
-@@ -2102,6 +2108,11 @@
+@@ -2102,6 +2108,11 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
  {
  	struct mmc_blk_data *md;
  	int devidx, ret;
@@ -12762,7 +12799,7 @@ diff -Naur A/drivers/mmc/card/block.c B/drivers/mmc/card/block.c
  
  	devidx = find_first_zero_bit(dev_use, max_devices);
  	if (devidx >= max_devices)
-@@ -2121,6 +2132,13 @@
+@@ -2121,6 +2132,13 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
  	 * index anymore so we keep track of a name index.
  	 */
  	if (!subname) {
@@ -12776,7 +12813,7 @@ diff -Naur A/drivers/mmc/card/block.c B/drivers/mmc/card/block.c
  		int idx;
  
  		idx = mmc_get_reserved_index(card->host);
-@@ -2130,6 +2148,7 @@
+@@ -2130,6 +2148,7 @@ static struct mmc_blk_data *mmc_blk_alloc_req(struct mmc_card *card,
  			md->name_idx = find_next_zero_bit(name_use, max_devices,
  					mmc_first_nonreserved_index());
  
@@ -12784,10 +12821,11 @@ diff -Naur A/drivers/mmc/card/block.c B/drivers/mmc/card/block.c
  		__set_bit(md->name_idx, name_use);
  	} else
  		md->name_idx = ((struct mmc_blk_data *)
-diff -Naur A/drivers/net/ethernet/freescale/fec_main.c B/drivers/net/ethernet/freescale/fec_main.c
---- A/drivers/net/ethernet/freescale/fec_main.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/net/ethernet/freescale/fec_main.c	2017-04-19 15:13:34.022879476 +0530
-@@ -980,6 +980,10 @@
+diff --git a/drivers/net/ethernet/freescale/fec_main.c b/drivers/net/ethernet/freescale/fec_main.c
+index 2b1604113257..fea76938448f 100644
+--- a/drivers/net/ethernet/freescale/fec_main.c
++++ b/drivers/net/ethernet/freescale/fec_main.c
+@@ -980,6 +980,10 @@ fec_restart(struct net_device *ndev)
  		writel(0x0, fep->hwp + FEC_X_CNTRL);
  	}
  
@@ -12798,9 +12836,10 @@ diff -Naur A/drivers/net/ethernet/freescale/fec_main.c B/drivers/net/ethernet/fr
  	/* Set MII speed */
  	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
  
-diff -Naur A/drivers/pwm/pwm-imx.c B/drivers/pwm/pwm-imx.c
---- A/drivers/pwm/pwm-imx.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/pwm/pwm-imx.c	2017-04-19 15:10:02.658875421 +0530
+diff --git a/drivers/pwm/pwm-imx.c b/drivers/pwm/pwm-imx.c
+index 66d6f0c5c421..cdc095ee7f1b 100644
+--- a/drivers/pwm/pwm-imx.c
++++ b/drivers/pwm/pwm-imx.c
 @@ -38,6 +38,10 @@
  #define MX3_PWMCR_DOZEEN		(1 << 24)
  #define MX3_PWMCR_WAITEN		(1 << 23)
@@ -12812,7 +12851,7 @@ diff -Naur A/drivers/pwm/pwm-imx.c B/drivers/pwm/pwm-imx.c
  #define MX3_PWMCR_CLKSRC_IPG_HIGH	(2 << 16)
  #define MX3_PWMCR_CLKSRC_IPG		(1 << 16)
  #define MX3_PWMCR_SWR			(1 << 3)
-@@ -172,10 +176,16 @@
+@@ -172,10 +176,16 @@ static int imx_pwm_config_v2(struct pwm_chip *chip,
  	writel(duty_cycles, imx->mmio_base + MX3_PWMSAR);
  	writel(period_cycles, imx->mmio_base + MX3_PWMPR);
  
@@ -12830,10 +12869,11 @@ diff -Naur A/drivers/pwm/pwm-imx.c B/drivers/pwm/pwm-imx.c
  	if (enable)
  		cr |= MX3_PWMCR_EN;
  
-diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100-regulator.c
---- A/drivers/regulator/pfuze100-regulator.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/regulator/pfuze100-regulator.c	2017-04-19 15:16:15.858882580 +0530
-@@ -129,7 +129,14 @@
+diff --git a/drivers/regulator/pfuze100-regulator.c b/drivers/regulator/pfuze100-regulator.c
+index e8099f4c2738..deba3fd4cbb9 100644
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -129,7 +129,14 @@ static int pfuze100_set_ramp_delay(struct regulator_dev *rdev, int ramp_delay)
  	unsigned int ramp_bits;
  	int ret;
  
@@ -12848,7 +12888,7 @@ diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100
  		ramp_delay = 12500 / ramp_delay;
  		ramp_bits = (ramp_delay >> 1) - (ramp_delay >> 3);
  		ret = regmap_update_bits(pfuze100->regmap,
-@@ -310,15 +317,23 @@
+@@ -310,15 +317,23 @@ static struct pfuze_regulator pfuze100_regulators[] = {
  	PFUZE100_SW_REG(PFUZE100, SW3A, PFUZE100_SW3AVOL, 400000, 1975000, 25000),
  	PFUZE100_SW_REG(PFUZE100, SW3B, PFUZE100_SW3BVOL, 400000, 1975000, 25000),
  	PFUZE100_SW_REG(PFUZE100, SW4, PFUZE100_SW4VOL, 400000, 1975000, 25000),
@@ -12872,7 +12912,7 @@ diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100
  };
  
  static struct pfuze_regulator pfuze200_regulators[] = {
-@@ -364,15 +379,23 @@
+@@ -364,15 +379,23 @@ static struct of_regulator_match pfuze100_matches[] = {
  	{ .name = "sw3a",	},
  	{ .name = "sw3b",	},
  	{ .name = "sw4",	},
@@ -12896,7 +12936,7 @@ diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100
  };
  
  /* PFUZE200 */
-@@ -485,6 +508,84 @@
+@@ -485,6 +508,84 @@ static inline struct device_node *match_of_node(int index)
  }
  #endif
  
@@ -12981,7 +13021,7 @@ diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100
  static int pfuze_identify(struct pfuze_chip *pfuze_chip)
  {
  	unsigned int value;
-@@ -573,6 +674,10 @@
+@@ -573,6 +674,10 @@ static int pfuze100_regulator_probe(struct i2c_client *client,
  		return ret;
  	}
  
@@ -12992,10 +13032,11 @@ diff -Naur A/drivers/regulator/pfuze100-regulator.c B/drivers/regulator/pfuze100
  	ret = pfuze_identify(pfuze_chip);
  	if (ret) {
  		dev_err(&client->dev, "unrecognized pfuze chip ID!\n");
-diff -Naur A/drivers/thermal/imx_thermal.c B/drivers/thermal/imx_thermal.c
---- A/drivers/thermal/imx_thermal.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/thermal/imx_thermal.c	2017-04-25 11:29:30.368828300 +0530
-@@ -106,6 +106,9 @@
+diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
+index fa8151882f87..ea515c3a6a78 100644
+--- a/drivers/thermal/imx_thermal.c
++++ b/drivers/thermal/imx_thermal.c
+@@ -106,6 +106,9 @@ enum imx_thermal_trip {
  #define TEMPMON_IMX6Q			1
  #define TEMPMON_IMX6SX			2
  #define TEMPMON_IMX7			3
@@ -13005,7 +13046,7 @@ diff -Naur A/drivers/thermal/imx_thermal.c B/drivers/thermal/imx_thermal.c
  
  /* the register offsets and bitfields may change across
   * i.MX SOCs, use below struct as a description of the
-@@ -232,6 +235,9 @@
+@@ -232,6 +235,9 @@ struct imx_thermal_data {
  	struct clk *thermal_clk;
  	struct mutex mutex;
  	const struct thermal_soc_data *socdata;
@@ -13015,7 +13056,7 @@ diff -Naur A/drivers/thermal/imx_thermal.c B/drivers/thermal/imx_thermal.c
  };
  
  static struct imx_thermal_data *imx_thermal_data;
-@@ -620,7 +626,41 @@
+@@ -620,7 +626,41 @@ static int imx_get_sensor_data(struct platform_device *pdev)
  		imx7_calibrate_data(data, val);
  	else
  		imx6_calibrate_data(data, val);
@@ -13057,7 +13098,7 @@ diff -Naur A/drivers/thermal/imx_thermal.c B/drivers/thermal/imx_thermal.c
  	/*
  	 * Set the default passive cooling trip point to IMX_TEMP_PASSIVE.
  	 * Can be changed from userspace.
-@@ -628,11 +668,12 @@
+@@ -628,11 +668,12 @@ static int imx_get_sensor_data(struct platform_device *pdev)
  	data->temp_passive = IMX_TEMP_PASSIVE;
  
  	/*
@@ -13071,10 +13112,11 @@ diff -Naur A/drivers/thermal/imx_thermal.c B/drivers/thermal/imx_thermal.c
  	return 0;
  }
  
-diff -Naur A/drivers/video/backlight/pwm_bl.c B/drivers/video/backlight/pwm_bl.c
---- A/drivers/video/backlight/pwm_bl.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/backlight/pwm_bl.c	2017-04-19 15:12:16.078877981 +0530
-@@ -104,13 +104,19 @@
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index 9488e5d2409d..37e32e49351f 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -104,13 +104,19 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
  	if (pb->notify)
  		brightness = pb->notify(pb->dev, brightness);
  
@@ -13095,9 +13137,37 @@ diff -Naur A/drivers/video/backlight/pwm_bl.c B/drivers/video/backlight/pwm_bl.c
  	if (pb->notify_after)
  		pb->notify_after(pb->dev, brightness);
  
-diff -Naur A/drivers/video/fbdev/mxc/iwg15_backlight.c B/drivers/video/fbdev/mxc/iwg15_backlight.c
---- A/drivers/video/fbdev/mxc/iwg15_backlight.c	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/fbdev/mxc/iwg15_backlight.c	2017-04-19 16:12:52.350947733 +0530
+diff --git a/drivers/video/fbdev/mxc/Kconfig b/drivers/video/fbdev/mxc/Kconfig
+index 3650a538d5ff..fe59bb0c5581 100644
+--- a/drivers/video/fbdev/mxc/Kconfig
++++ b/drivers/video/fbdev/mxc/Kconfig
+@@ -96,3 +96,9 @@ config FB_MXC_EINK_V2_PANEL
+ config FB_MXC_EINK_AUTO_UPDATE_MODE
+ 	bool "E-Ink Auto-update Mode Support"
+ 	depends on FB_MXC_EINK_PANEL
++
++config IWG15_BACKLIGHT
++       tristate "iWave RainboW G15 backlight control"
++       depends on IWG15 && MXC_IPU_V3
++       help
++         Say yes here to control the LVDS backlight and power control in iW-RainboW-G15 platform.
+diff --git a/drivers/video/fbdev/mxc/Makefile b/drivers/video/fbdev/mxc/Makefile
+index dafc050f6b31..48468cbe37a1 100644
+--- a/drivers/video/fbdev/mxc/Makefile
++++ b/drivers/video/fbdev/mxc/Makefile
+@@ -4,6 +4,7 @@ obj-$(CONFIG_FB_MXC_TRULY_WVGA_SYNC_PANEL)      += mxcfb_hx8369_wvga.o
+ obj-$(CONFIG_FB_MXC_TRULY_PANEL_TFT3P5079E)     += mxcfb_otm8018b_wvga.o
+ obj-$(CONFIG_FB_MXC_TRULY_PANEL_TFT3P5581E)	+= mxcfb_hx8363_wvga.o
+ obj-$(CONFIG_FB_MXC_LDB) += ldb.o
++obj-$(CONFIG_IWG15_BACKLIGHT) += iwg15_backlight.o
+ obj-$(CONFIG_FB_MXC_HDMI)			+= mxc_hdmi.o
+ obj-$(CONFIG_FB_MXC_EDID)			+= mxc_edid.o
+ obj-$(CONFIG_FB_MXC_SYNC_PANEL) += mxc_dispdrv.o mxc_lcdif.o mxc_ipuv3_fb.o
+diff --git a/drivers/video/fbdev/mxc/iwg15_backlight.c b/drivers/video/fbdev/mxc/iwg15_backlight.c
+new file mode 100644
+index 000000000000..d6142389a76c
+--- /dev/null
++++ b/drivers/video/fbdev/mxc/iwg15_backlight.c
 @@ -0,0 +1,252 @@
 +/*
 + * Copyright (c) 2014-2015 iWave Systems Technologies Pvt. Ltd.
@@ -13351,34 +13421,11 @@ diff -Naur A/drivers/video/fbdev/mxc/iwg15_backlight.c B/drivers/video/fbdev/mxc
 +MODULE_DESCRIPTION("iWave LVDS power and backlight Driver");
 +MODULE_VERSION("0.1");
 +MODULE_LICENSE("GPL v2");
-diff -Naur A/drivers/video/fbdev/mxc/Kconfig B/drivers/video/fbdev/mxc/Kconfig
---- A/drivers/video/fbdev/mxc/Kconfig	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/fbdev/mxc/Kconfig	2017-04-19 15:12:13.846877938 +0530
-@@ -96,3 +96,9 @@
- config FB_MXC_EINK_AUTO_UPDATE_MODE
- 	bool "E-Ink Auto-update Mode Support"
- 	depends on FB_MXC_EINK_PANEL
-+
-+config IWG15_BACKLIGHT
-+       tristate "iWave RainboW G15 backlight control"
-+       depends on IWG15 && MXC_IPU_V3
-+       help
-+         Say yes here to control the LVDS backlight and power control in iW-RainboW-G15 platform.
-diff -Naur A/drivers/video/fbdev/mxc/Makefile B/drivers/video/fbdev/mxc/Makefile
---- A/drivers/video/fbdev/mxc/Makefile	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/fbdev/mxc/Makefile	2017-04-19 15:12:13.846877938 +0530
-@@ -4,6 +4,7 @@
- obj-$(CONFIG_FB_MXC_TRULY_PANEL_TFT3P5079E)     += mxcfb_otm8018b_wvga.o
- obj-$(CONFIG_FB_MXC_TRULY_PANEL_TFT3P5581E)	+= mxcfb_hx8363_wvga.o
- obj-$(CONFIG_FB_MXC_LDB) += ldb.o
-+obj-$(CONFIG_IWG15_BACKLIGHT) += iwg15_backlight.o
- obj-$(CONFIG_FB_MXC_HDMI)			+= mxc_hdmi.o
- obj-$(CONFIG_FB_MXC_EDID)			+= mxc_edid.o
- obj-$(CONFIG_FB_MXC_SYNC_PANEL) += mxc_dispdrv.o mxc_lcdif.o mxc_ipuv3_fb.o
-diff -Naur A/drivers/video/fbdev/mxc/mxc_lcdif.c B/drivers/video/fbdev/mxc/mxc_lcdif.c
---- A/drivers/video/fbdev/mxc/mxc_lcdif.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/fbdev/mxc/mxc_lcdif.c	2017-04-19 15:12:13.846877938 +0530
-@@ -36,6 +36,15 @@
+diff --git a/drivers/video/fbdev/mxc/mxc_lcdif.c b/drivers/video/fbdev/mxc/mxc_lcdif.c
+index 59d429c82017..1fe49a57666a 100644
+--- a/drivers/video/fbdev/mxc/mxc_lcdif.c
++++ b/drivers/video/fbdev/mxc/mxc_lcdif.c
+@@ -36,6 +36,15 @@ struct mxc_lcdif_data {
  #define DISPDRV_LCD	"lcd"
  
  static struct fb_videomode lcdif_modedb[] = {
@@ -13394,36 +13441,11 @@ diff -Naur A/drivers/video/fbdev/mxc/mxc_lcdif.c B/drivers/video/fbdev/mxc/mxc_l
  	{
  	/* 800x480 @ 57 Hz , pixel clk @ 27MHz */
  	"CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
-diff -Naur A/drivers/video/fbdev/mxc/.mxc_lcdif.c.swp B/drivers/video/fbdev/mxc/.mxc_lcdif.c.swp
---- A/drivers/video/fbdev/mxc/.mxc_lcdif.c.swp	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/fbdev/mxc/.mxc_lcdif.c.swp	2017-04-24 21:15:20.728930746 +0530
-@@ -0,0 +1,21 @@
-+b0VIM 7.4      õ0÷Xq¯ ("  sindhub                                 iwave                                   ~sindhub/PRDVZ/PREPZ/svn_testing/kernel-source/drivers/video/fbdev/mxc/mxc_lcdif.c                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 3210    #"! U                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 tp           ˆ                            n       ‰                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ad  )   e     ˆ       ý  ¯  «  ª  §  a    ë  è  ±  ‰  …  „  l  U  ;  !    ë  Ç  ¤  £  Š  ‰  j  W  J  <  9  8       Ù  Ö  Õ  »  º  Œ  x  8  .  ü  Â  ¤  „  w  p  m  B    ð
-+  ×
-+  Ñ
-+  Î
-+  £
-+  f
-+  O
-+  6
-+  0
-+  -
-+  ö	  õ	  ¾	  ˜	  –	  ‰	  N	  %	  æ  ¹  —  –  s  E    
-+  ü  û  ®  z  m  6  	      Û  ¸  Ÿ  p  F  &    ý  ù  ö  õ  è  æ  å  ²  °  ¦  ¤  £  t  ]  G  .  +  *  í  À  ¾  ‘  ‡  q  V  U      È  º  ·  ƒ  w  ?  1  .  ø  ì  ³  ¥  ¢  ¡  „  e  d                                           	plat_data->disp_id = disp_id; 	plat_data->ipu_id = ipu_id;  	} 		return err; 		dev_dbg(&pdev->dev, "get of property disp_id fail\n"); 	if (err) { 	err = of_property_read_u32(np, "disp_id", &disp_id); 	} 		return err; 		dev_dbg(&pdev->dev, "get of property ipu_id fail\n"); 	if (err) { 	err = of_property_read_u32(np, "ipu_id", &ipu_id); 	} 		return err; 		dev_dbg(&pdev->dev, "get of property default_ifmt fail\n"); 	if (err) { 	err = of_property_read_string(np, "default_ifmt", &default_ifmt);  	const char *default_ifmt; 	u32 ipu_id, disp_id; 	int err; 	struct device_node *np = pdev->dev.of_node; { 				struct mxc_lcd_platform_data *plat_data) static int lcd_get_of_property(struct platform_device *pdev,  }; 	.deinit	= lcdif_deinit, 	.init 	= lcdif_init, 	.name 	= DISPDRV_LCD, static struct mxc_dispdrv_driver lcdif_drv = {  } 	/*TODO*/ { void lcdif_deinit(struct mxc_dispdrv_handle *disp)  } 	return ret;  	} 		} 			break; 					&setting->fbi->modelist); 			fb_add_videomode(&modedb[i], 		if (fb_mode_is_equal(&m, &modedb[i])) { 		fb_var_to_videomode(&m, &setting->fbi->var); 		struct fb_videomode m; 	for (i = 0; i < modedb_sz; i++) { 	INIT_LIST_HEAD(&setting->fbi->modelist);  	} 		setting->if_fmt = plat_data->default_ifmt; 		fb_videomode_to_var(&setting->fbi->var, &modedb[0]); 	if (!ret) { 				modedb, modedb_sz, NULL, setting->default_bpp); 	ret = fb_find_mode(&setting->fbi->var, setting->fbi, setting->dft_mode_str,  		return ret; 	if (ret < 0) 			     plat_data->disp_id, &setting->crtc); 	ret = ipu_di_to_crtc(dev, plat_data->ipu_id, 	/* use platform defined ipu/di */  	int modedb_sz = lcdif_modedb_sz; 	struct fb_videomode *modedb = lcdif_modedb; 	struct mxc_lcd_platform_data *plat_data = dev->platform_data; 	struct device *dev = &lcdif->pdev->dev; 	struct mxc_lcdif_data *lcdif = mxc_dispdrv_getdata(disp); 	int ret, i; { 	struct mxc_dispdrv_setting *setting) static int lcdif_init(struct mxc_dispdrv_handle *disp,  static int lcdif_modedb_sz = ARRAY_SIZE(lcdif_modedb); }; 	0,}, 	FB_VMODE_NONINTERLACED, 	FB_SYNC_CLK_LAT_FALL, 	"SEIKO-WVGA", 60, 800, 480, 29850, 89, 164, 23, 10, 10, 10, 	/* 800x480 @ 60 Hz , pixel clk @ 32MHz */ 	{ 	0,}, 	FB_VMODE_NONINTERLACED, 	FB_SYNC_CLK_LAT_FALL, 	"CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10, 	/* 800x480 @ 57 Hz , pixel clk @ 27MHz */ 	{ #endif         0,},         FB_VMODE_NONINTERLACED,         FB_SYNC_CLK_LAT_FALL,         "WQVGA", 60, 480, 272, 30030, 2, 2, 1, 2, 41, 10,         /* 480x272 @ 57 Hz , pixel clk @ 27MHz */         {         /* IWG15M-SM: LCD: Parameters for the WQVGA LCD used */ #ifdef CONFIG_IWG15 static struct fb_videomode lcdif_modedb[] = {  #define DISPDRV_LCD	"lcd"  }; 	struct mxc_dispdrv_handle *disp_lcdif; 	struct platform_device *pdev; struct mxc_lcdif_data {  }; 	u32 disp_id; 	u32 ipu_id; 	u32 default_ifmt; struct mxc_lcd_platform_data {  #include "mxc_dispdrv.h"  #include <linux/platform_device.h> #include <linux/pinctrl/consumer.h> #include <linux/of_device.h> #include <linux/mxcfb.h> #include <linux/module.h> #include <linux/kernel.h> #include <linux/ipu.h> #include <linux/init.h>   */  * http://www.gnu.org/copyleft/gpl.html  * http://www.opensource.org/licenses/gpl-license.html  *  * Version 2 or later at the following locations:  * License. You may obtain a copy of the GNU General Public License  * The code contained herein is licensed under the GNU General Public /*   */  * Copyright (C) 2011-2015 Freescale Semiconductor, Inc. All Rights Reserved. /* ad  C       n       ×  ¨  z  K    î  ¿    `  0    Ñ  ¡  p  A    ä  ¶  ‡  Y  *  ú  ò  Ä  ²  ¯  ®  ¡  Ÿ  ž  e  c  Y  ?     ö
-+  õ
-+  Ç
-+  †
-+  u
-+  h
-+  V
-+  0
-+  
-+  õ	  ä	  Ò	  ¬	  «	  ~	  n	  9	  +	  (	  '	  ï  ×  ¢  ‡  „  ƒ  n  7      á  ´  ³  ¦  ¤  £  i  g  *  )  þ  Ò  Ã  ¸  ¶  µ    b  N  K      ô  Ð  Ì  ±  ”  ‘    i  g  2  0  /      Õ  Ó  Ò  µ  ˜  —  g  .                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         MODULE_LICENSE("GPL"); MODULE_DESCRIPTION("i.MX ipuv3 LCD extern port driver"); MODULE_AUTHOR("Freescale Semiconductor, Inc.");  module_exit(mxc_lcdif_exit); module_init(mxc_lcdif_init);  } 	platform_driver_unregister(&mxc_lcdif_driver); { static void __exit mxc_lcdif_exit(void)  } 	return platform_driver_register(&mxc_lcdif_driver); { static int __init mxc_lcdif_init(void)  }; 	.remove = mxc_lcdif_remove, 	.probe = mxc_lcdif_probe, 	}, 		.of_match_table	= imx_lcd_dt_ids, 		.name = "mxc_lcdif", 	.driver = { static struct platform_driver mxc_lcdif_driver = { }; 	{ /* sentinel */ } 	{ .compatible = "fsl,lcd"}, static const struct of_device_id imx_lcd_dt_ids[] = {  } 	return 0; 	kfree(lcdif); 	mxc_dispdrv_unregister(lcdif->disp_lcdif); 	mxc_dispdrv_puthandle(lcdif->disp_lcdif);  	struct mxc_lcdif_data *lcdif = dev_get_drvdata(&pdev->dev); { static int mxc_lcdif_remove(struct platform_device *pdev)  } 	return ret;  	dev_dbg(&pdev->dev, "%s exit\n", __func__); 	dev_set_drvdata(&pdev->dev, lcdif);  	mxc_dispdrv_setdata(lcdif->disp_lcdif, lcdif); 	lcdif->disp_lcdif = mxc_dispdrv_register(&lcdif_drv); 	lcdif->pdev = pdev;  	} 		return PTR_ERR(pinctrl); 		dev_err(&pdev->dev, "can't get/select pinctrl\n"); 	if (IS_ERR(pinctrl)) { 	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);  	} 		return ret; 		dev_err(&pdev->dev, "get lcd of property fail\n"); 	if (ret < 0) { 	ret = lcd_get_of_property(pdev, plat_data);  	pdev->dev.platform_data = plat_data; 		return -ENOMEM; 	if (!plat_data) 				GFP_KERNEL); 				sizeof(struct mxc_lcd_platform_data), 	plat_data = devm_kzalloc(&pdev->dev, 		return -ENOMEM; 	if (!lcdif) 				GFP_KERNEL); 	lcdif = devm_kzalloc(&pdev->dev, sizeof(struct mxc_lcdif_data), 	dev_dbg(&pdev->dev, "%s enter\n", __func__);  	struct mxc_lcd_platform_data *plat_data; 	struct mxc_lcdif_data *lcdif; 	struct pinctrl *pinctrl; 	int ret; { static int mxc_lcdif_probe(struct platform_device *pdev)  } 	return err;  	} 		return -ENOENT; 		dev_err(&pdev->dev, "err default_ifmt!\n"); 	else { 				plat_data->default_ifmt = IPU_PIX_FMT_VYUY; 	else if (!strncmp(default_ifmt, "VYUY16", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_YVYU; 	else if (!strncmp(default_ifmt, "YVYU16", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_UYVY; 	else if (!strncmp(default_ifmt, "UYVY16", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_YUYV; 	else if (!strncmp(default_ifmt, "YUYV16", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_LVDS666; 	else if (!strncmp(default_ifmt, "LVDS666", 7)) 		plat_data->default_ifmt = IPU_PIX_FMT_YUV444; 	else if (!strncmp(default_ifmt, "YUV444", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_RGB666; 	else if (!strncmp(default_ifmt, "RGB666", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_RGB565; 	else if (!strncmp(default_ifmt, "RGB565", 6)) 		plat_data->default_ifmt = IPU_PIX_FMT_GBR24; 	else if (!strncmp(default_ifmt, "GBR24", 5)) 		plat_data->default_ifmt = IPU_PIX_FMT_BGR24; 	else if (!strncmp(default_ifmt, "BGR24", 5)) 		plat_data->default_ifmt = IPU_PIX_FMT_RGB24; 	if (!strncmp(default_ifmt, "RGB24", 5)) 
-\ No newline at end of file
-diff -Naur A/drivers/video/logo/Kconfig B/drivers/video/logo/Kconfig
---- A/drivers/video/logo/Kconfig	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/logo/Kconfig	2017-04-19 15:12:04.734877763 +0530
-@@ -27,6 +27,11 @@
+diff --git a/drivers/video/logo/Kconfig b/drivers/video/logo/Kconfig
+index 0037104d66ac..f09447c1b185 100644
+--- a/drivers/video/logo/Kconfig
++++ b/drivers/video/logo/Kconfig
+@@ -27,6 +27,11 @@ config LOGO_LINUX_CLUT224
  	bool "Standard 224-color Linux logo"
  	default y
  
@@ -13435,10 +13457,23 @@ diff -Naur A/drivers/video/logo/Kconfig B/drivers/video/logo/Kconfig
  config LOGO_BLACKFIN_VGA16
  	bool "16-colour Blackfin Processor Linux logo"
  	depends on BLACKFIN
-diff -Naur A/drivers/video/logo/logo.c B/drivers/video/logo/logo.c
---- A/drivers/video/logo/logo.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/logo/logo.c	2017-04-19 15:12:04.734877763 +0530
-@@ -43,7 +43,10 @@
+diff --git a/drivers/video/logo/Makefile b/drivers/video/logo/Makefile
+index 3b437813584c..d068cf91a50b 100644
+--- a/drivers/video/logo/Makefile
++++ b/drivers/video/logo/Makefile
+@@ -4,6 +4,7 @@ obj-$(CONFIG_LOGO)			+= logo.o
+ obj-$(CONFIG_LOGO_LINUX_MONO)		+= logo_linux_mono.o
+ obj-$(CONFIG_LOGO_LINUX_VGA16)		+= logo_linux_vga16.o
+ obj-$(CONFIG_LOGO_LINUX_CLUT224)	+= logo_linux_clut224.o
++obj-$(CONFIG_LOGO_IWAVE_SM_CLUT224)     += logo_iwave_sm_solo_clut224.o logo_iwave_sm_dual_clut224.o logo_iwave_sm_triple_clut224.o logo_iwave_sm_quad_clut224.o
+ obj-$(CONFIG_LOGO_BLACKFIN_CLUT224)	+= logo_blackfin_clut224.o
+ obj-$(CONFIG_LOGO_BLACKFIN_VGA16)	+= logo_blackfin_vga16.o
+ obj-$(CONFIG_LOGO_DEC_CLUT224)		+= logo_dec_clut224.o
+diff --git a/drivers/video/logo/logo.c b/drivers/video/logo/logo.c
+index 10fbfd8ab963..577c476cb53e 100644
+--- a/drivers/video/logo/logo.c
++++ b/drivers/video/logo/logo.c
+@@ -43,7 +43,10 @@ late_initcall(fb_logo_late_init);
  const struct linux_logo * __init_refok fb_find_logo(int depth)
  {
  	const struct linux_logo *logo = NULL;
@@ -13450,7 +13485,7 @@ diff -Naur A/drivers/video/logo/logo.c B/drivers/video/logo/logo.c
  	if (nologo || logos_freed)
  		return NULL;
  
-@@ -78,6 +81,20 @@
+@@ -78,6 +81,20 @@ const struct linux_logo * __init_refok fb_find_logo(int depth)
  		/* Generic Linux logo */
  		logo = &logo_linux_clut224;
  #endif
@@ -13471,9 +13506,11 @@ diff -Naur A/drivers/video/logo/logo.c B/drivers/video/logo/logo.c
  #ifdef CONFIG_LOGO_BLACKFIN_CLUT224
  		/* Blackfin Linux logo */
  		logo = &logo_blackfin_clut224;
-diff -Naur A/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm B/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm
---- A/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm	2017-05-14 20:04:25.602239457 +0530
+diff --git a/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm b/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm
+new file mode 100644
+index 000000000000..8230a7fa1b4c
+--- /dev/null
++++ b/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm
 @@ -0,0 +1,4803 @@
 +P3
 +480 60
@@ -18278,9 +18315,11 @@ diff -Naur A/drivers/video/logo/logo_iwave_sm_dual_clut224.ppm B/drivers/video/l
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
-diff -Naur A/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm B/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm
---- A/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm	2017-05-14 20:04:37.154239679 +0530
+diff --git a/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm b/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm
+new file mode 100644
+index 000000000000..f1a0ac02fdc0
+--- /dev/null
++++ b/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm
 @@ -0,0 +1,4803 @@
 +P3
 +480 60
@@ -23085,9 +23124,11 @@ diff -Naur A/drivers/video/logo/logo_iwave_sm_quad_clut224.ppm B/drivers/video/l
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
-diff -Naur A/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm B/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm
---- A/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm	2017-05-14 20:04:50.394239933 +0530
+diff --git a/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm b/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm
+new file mode 100644
+index 000000000000..9512d8e857dd
+--- /dev/null
++++ b/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm
 @@ -0,0 +1,4803 @@
 +P3
 +480 60
@@ -27892,9 +27933,11 @@ diff -Naur A/drivers/video/logo/logo_iwave_sm_solo_clut224.ppm B/drivers/video/l
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
-diff -Naur A/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm B/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm
---- A/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm	1970-01-01 05:30:00.000000000 +0530
-+++ B/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm	2017-05-14 20:05:02.986240174 +0530
+diff --git a/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm b/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm
+new file mode 100644
+index 000000000000..ea4294bfb41c
+--- /dev/null
++++ b/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm
 @@ -0,0 +1,4803 @@
 +P3
 +480 60
@@ -32699,20 +32742,10 @@ diff -Naur A/drivers/video/logo/logo_iwave_sm_triple_clut224.ppm B/drivers/video
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
-diff -Naur A/drivers/video/logo/Makefile B/drivers/video/logo/Makefile
---- A/drivers/video/logo/Makefile	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/video/logo/Makefile	2017-04-19 15:12:04.734877763 +0530
-@@ -4,6 +4,7 @@
- obj-$(CONFIG_LOGO_LINUX_MONO)		+= logo_linux_mono.o
- obj-$(CONFIG_LOGO_LINUX_VGA16)		+= logo_linux_vga16.o
- obj-$(CONFIG_LOGO_LINUX_CLUT224)	+= logo_linux_clut224.o
-+obj-$(CONFIG_LOGO_IWAVE_SM_CLUT224)     += logo_iwave_sm_solo_clut224.o logo_iwave_sm_dual_clut224.o logo_iwave_sm_triple_clut224.o logo_iwave_sm_quad_clut224.o
- obj-$(CONFIG_LOGO_BLACKFIN_CLUT224)	+= logo_blackfin_clut224.o
- obj-$(CONFIG_LOGO_BLACKFIN_VGA16)	+= logo_blackfin_vga16.o
- obj-$(CONFIG_LOGO_DEC_CLUT224)		+= logo_dec_clut224.o
-diff -Naur A/drivers/watchdog/imx2_wdt.c B/drivers/watchdog/imx2_wdt.c
---- A/drivers/watchdog/imx2_wdt.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/drivers/watchdog/imx2_wdt.c	2017-04-19 15:10:00.878875387 +0530
+diff --git a/drivers/watchdog/imx2_wdt.c b/drivers/watchdog/imx2_wdt.c
+index 805df6b33625..2520095b3443 100644
+--- a/drivers/watchdog/imx2_wdt.c
++++ b/drivers/watchdog/imx2_wdt.c
 @@ -67,6 +67,11 @@
  #define WDOG_SEC_TO_COUNT(s)	((s * 2 - 1) << 8)
  #define WDOG_SEC_TO_PRECOUNT(s)	(s * 2)		/* set WDOG pre timeout count*/
@@ -32725,7 +32758,7 @@ diff -Naur A/drivers/watchdog/imx2_wdt.c B/drivers/watchdog/imx2_wdt.c
  struct imx2_wdt_device {
  	struct clk *clk;
  	struct regmap *regmap;
-@@ -198,6 +203,13 @@
+@@ -198,6 +203,13 @@ static int imx2_wdt_start(struct watchdog_device *wdog)
  	} else
  		imx2_wdt_setup(wdog);
  
@@ -32739,10 +32772,11 @@ diff -Naur A/drivers/watchdog/imx2_wdt.c B/drivers/watchdog/imx2_wdt.c
  	return imx2_wdt_ping(wdog);
  }
  
-diff -Naur A/include/linux/libata.h B/include/linux/libata.h
---- A/include/linux/libata.h	2017-01-18 13:20:28.593463000 +0530
-+++ B/include/linux/libata.h	2017-04-19 15:08:24.322873535 +0530
-@@ -1955,6 +1955,6 @@
+diff --git a/include/linux/libata.h b/include/linux/libata.h
+index e0e33787c485..6ea4c30c663a 100644
+--- a/include/linux/libata.h
++++ b/include/linux/libata.h
+@@ -1955,6 +1955,6 @@ static inline u8 ata_wait_idle(struct ata_port *ap)
  
  	return status;
  }
@@ -32750,10 +32784,11 @@ diff -Naur A/include/linux/libata.h B/include/linux/libata.h
 +#endif /* CONFIG_ATA_SFF */ 
  
  #endif /* __LINUX_LIBATA_H__ */
-diff -Naur A/include/linux/linux_logo.h B/include/linux/linux_logo.h
---- A/include/linux/linux_logo.h	2017-01-18 13:20:28.593463000 +0530
-+++ B/include/linux/linux_logo.h	2017-04-19 15:08:22.382873498 +0530
-@@ -32,6 +32,14 @@
+diff --git a/include/linux/linux_logo.h b/include/linux/linux_logo.h
+index ca5bd91d12e1..1f9d7009bccc 100644
+--- a/include/linux/linux_logo.h
++++ b/include/linux/linux_logo.h
+@@ -32,6 +32,14 @@ struct linux_logo {
  	const unsigned char *data;
  };
  
@@ -32768,9 +32803,10 @@ diff -Naur A/include/linux/linux_logo.h B/include/linux/linux_logo.h
  extern const struct linux_logo logo_linux_mono;
  extern const struct linux_logo logo_linux_vga16;
  extern const struct linux_logo logo_linux_clut224;
-diff -Naur A/include/linux/regulator/pfuze100.h B/include/linux/regulator/pfuze100.h
---- A/include/linux/regulator/pfuze100.h	2017-01-18 13:20:28.593463000 +0530
-+++ B/include/linux/regulator/pfuze100.h	2017-04-19 15:08:23.642873522 +0530
+diff --git a/include/linux/regulator/pfuze100.h b/include/linux/regulator/pfuze100.h
+index 70c6c66c5bcf..9c0b9c43b2d0 100644
+--- a/include/linux/regulator/pfuze100.h
++++ b/include/linux/regulator/pfuze100.h
 @@ -24,6 +24,21 @@
  #define PFUZE100_SW3A		3
  #define PFUZE100_SW3B		4
@@ -32801,10 +32837,11 @@ diff -Naur A/include/linux/regulator/pfuze100.h B/include/linux/regulator/pfuze1
  
  #define PFUZE200_SW1AB		0
  #define PFUZE200_SW2		1
-diff -Naur A/sound/soc/codecs/sgtl5000.c B/sound/soc/codecs/sgtl5000.c
---- A/sound/soc/codecs/sgtl5000.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/sound/soc/codecs/sgtl5000.c	2017-04-19 14:59:06.182862828 +0530
-@@ -435,7 +435,12 @@
+diff --git a/sound/soc/codecs/sgtl5000.c b/sound/soc/codecs/sgtl5000.c
+index 3a29c0ac5d8a..db9683e0e0c1 100644
+--- a/sound/soc/codecs/sgtl5000.c
++++ b/sound/soc/codecs/sgtl5000.c
+@@ -435,7 +435,12 @@ static const struct snd_kcontrol_new sgtl5000_snd_controls[] = {
  
  	SOC_DOUBLE_TLV("Headphone Playback Volume",
  			SGTL5000_CHIP_ANA_HP_CTRL,
@@ -32817,10 +32854,11 @@ diff -Naur A/sound/soc/codecs/sgtl5000.c B/sound/soc/codecs/sgtl5000.c
  			0x7f, 1,
  			headphone_volume),
  	SOC_SINGLE("Headphone Playback ZC Switch", SGTL5000_CHIP_ANA_CTRL,
-diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
---- A/sound/soc/fsl/fsl_ssi.c	2017-01-18 13:20:28.593463000 +0530
-+++ B/sound/soc/fsl/fsl_ssi.c	2017-04-19 14:59:08.706862877 +0530
-@@ -306,11 +306,23 @@
+diff --git a/sound/soc/fsl/fsl_ssi.c b/sound/soc/fsl/fsl_ssi.c
+index ca6f6b17c85b..ef15778856dd 100644
+--- a/sound/soc/fsl/fsl_ssi.c
++++ b/sound/soc/fsl/fsl_ssi.c
+@@ -306,11 +306,23 @@ static struct fsl_ssi_soc_data fsl_ssi_imx51 = {
  		CCSR_SSI_SISR_TUE0 | CCSR_SSI_SISR_TUE1,
  };
  
@@ -32844,7 +32882,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  	{}
  };
  MODULE_DEVICE_TABLE(of, fsl_ssi_ids);
-@@ -1007,6 +1019,7 @@
+@@ -1007,6 +1019,7 @@ static int _fsl_ssi_set_dai_fmt(struct device *dev,
  			CCSR_SSI_SFCSR_TFWM0(wm) | CCSR_SSI_SFCSR_RFWM0(wm) |
  			CCSR_SSI_SFCSR_TFWM1(wm) | CCSR_SSI_SFCSR_RFWM1(wm));
  
@@ -32852,7 +32890,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  	if (ssi_private->use_dual_fifo) {
  		regmap_update_bits(regs, CCSR_SSI_SRCR, CCSR_SSI_SRCR_RFEN1,
  				CCSR_SSI_SRCR_RFEN1);
-@@ -1171,12 +1184,19 @@
+@@ -1171,12 +1184,19 @@ static const struct snd_soc_component_driver fsl_ssi_component = {
  };
  
  static struct snd_soc_dai_driver fsl_ssi_ac97_dai = {
@@ -32872,7 +32910,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  		.formats = SNDRV_PCM_FMTBIT_S16_LE,
  	},
  	.capture = {
-@@ -1198,6 +1218,9 @@
+@@ -1198,6 +1218,9 @@ static void fsl_ssi_ac97_write(struct snd_ac97 *ac97, unsigned short reg,
  	struct regmap *regs = fsl_ac97_data->regs;
  	unsigned int lreg;
  	unsigned int lval;
@@ -32882,7 +32920,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  
  	if (reg > 0x7f)
  		return;
-@@ -1209,8 +1232,15 @@
+@@ -1209,8 +1232,15 @@ static void fsl_ssi_ac97_write(struct snd_ac97 *ac97, unsigned short reg,
  	lval = val << 4;
  	regmap_write(regs, CCSR_SSI_SACDAT, lval);
  
@@ -32898,7 +32936,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  	udelay(100);
  }
  
-@@ -1222,11 +1252,22 @@
+@@ -1222,11 +1252,22 @@ static unsigned short fsl_ssi_ac97_read(struct snd_ac97 *ac97,
  	unsigned short val = -1;
  	u32 reg_val;
  	unsigned int lreg;
@@ -32921,7 +32959,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  
  	udelay(100);
  
-@@ -1289,6 +1330,10 @@
+@@ -1289,6 +1330,10 @@ static int fsl_ssi_imx_probe(struct platform_device *pdev,
  	if (IS_ERR(ssi_private->baudclk))
  		dev_dbg(&pdev->dev, "could not get baud clock: %ld\n",
  			 PTR_ERR(ssi_private->baudclk));
@@ -32932,7 +32970,7 @@ diff -Naur A/sound/soc/fsl/fsl_ssi.c B/sound/soc/fsl/fsl_ssi.c
  
  	/*
  	 * We have burstsize be "fifo_depth - 2" to match the SSI
-@@ -1517,7 +1562,6 @@
+@@ -1517,7 +1562,6 @@ done:
  	if (ssi_private->dai_fmt)
  		_fsl_ssi_set_dai_fmt(&pdev->dev, ssi_private,
  				     ssi_private->dai_fmt);
