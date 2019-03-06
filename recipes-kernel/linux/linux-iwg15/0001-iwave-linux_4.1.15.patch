@@ -1319,22 +1319,6 @@ index 000000000000..e26754e2bc49
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/imx6qdl.dtsi b/arch/arm/boot/dts/imx6qdl.dtsi
-index 522d0178ce59..ae2a3b55ac04 100644
---- a/arch/arm/boot/dts/imx6qdl.dtsi
-+++ b/arch/arm/boot/dts/imx6qdl.dtsi
-@@ -538,9 +538,8 @@
- 				reg = <0x02098000 0x4000>;
- 				interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>;
- 				clocks = <&clks IMX6QDL_CLK_GPT_IPG>,
--					 <&clks IMX6QDL_CLK_GPT_IPG_PER>,
--					 <&clks IMX6QDL_CLK_GPT_3M>;
--				clock-names = "ipg", "per", "osc_per";
-+					 <&clks IMX6QDL_CLK_GPT_IPG_PER>;
-+				clock-names = "ipg", "per";
- 			};
- 
- 			gpio1: gpio@0209c000 {
 diff --git a/arch/arm/boot/dts/imx6qdl_iwg15.dtsi b/arch/arm/boot/dts/imx6qdl_iwg15.dtsi
 new file mode 100644
 index 000000000000..f73603ec78cb
@@ -11664,10 +11648,10 @@ index 5c29916224ea..437d2eed9145 100644
  void imx_set_aips(void __iomem *);
 diff --git a/arch/arm/mach-imx/mach-iwg15.c b/arch/arm/mach-imx/mach-iwg15.c
 new file mode 100644
-index 000000000000..91de8d8947f3
+index 000000000000..b371bafad536
 --- /dev/null
 +++ b/arch/arm/mach-imx/mach-iwg15.c
-@@ -0,0 +1,778 @@
+@@ -0,0 +1,702 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -11725,6 +11709,34 @@ index 000000000000..91de8d8947f3
 +static int flexcan1_en_gpio;
 +
 +static struct fec_platform_data fec_pdata;
++
++static void mmd_write_reg(struct phy_device *dev, int device, int reg, int val)
++{
++	phy_write(dev, 0x0d, device);
++	phy_write(dev, 0x0e, reg);
++	phy_write(dev, 0x0d, (1 << 14) | device);
++	phy_write(dev, 0x0e, val);
++}
++
++static int ksz9031_phy_fixup(struct phy_device *phydev)
++{
++	/* prefer master mode, 1000 Base-T capable */
++	phy_write(phydev, 0x9, 0x1f00);
++
++	/*
++	 * min rx data delay, max rx/tx clock delay,
++	 * min rx/tx control delay
++	 */
++	if(of_machine_is_compatible("iw,dls_iwg15m_sm") ||
++                        of_machine_is_compatible("iw,qd_iwg15m_sm")) {
++		mmd_write_reg(phydev, 2, 4, 0x80);
++		mmd_write_reg(phydev, 2, 5, 0x7787);
++		mmd_write_reg(phydev, 2, 6, 0);
++		mmd_write_reg(phydev, 2, 8, 0x03ff);
++	}
++
++	return 0;
++}
 +
 +static void __init imx6_iwg15_hdmi_cec_init (void)
 +{
@@ -12003,34 +12015,7 @@ index 000000000000..91de8d8947f3
 +		fec_pdata.sleep_mode_enable = imx6_iwg15_fec_sleep_enable;
 +}
 +
-+static void mmd_write_reg(struct phy_device *dev, int device, int reg, int val)
-+{
-+	phy_write(dev, 0x0d, device);
-+	phy_write(dev, 0x0e, reg);
-+	phy_write(dev, 0x0d, (1 << 14) | device);
-+	phy_write(dev, 0x0e, val);
-+}
-+
-+static int ksz9031_phy_fixup(struct phy_device *phydev)
-+{
-+	/* prefer master mode, 1000 Base-T capable */
-+	phy_write(phydev, 0x9, 0x1f00);
-+
-+	/*
-+	 * min rx data delay, max rx/tx clock delay,
-+	 * min rx/tx control delay
-+	 */
-+	if(of_machine_is_compatible("iw,dls_iwg15m_sm") ||
-+                        of_machine_is_compatible("iw,qd_iwg15m_sm")) {
-+		mmd_write_reg(phydev, 2, 4, 0x80);
-+		mmd_write_reg(phydev, 2, 5, 0x7787);
-+		mmd_write_reg(phydev, 2, 6, 0);
-+		mmd_write_reg(phydev, 2, 8, 0x03ff);
-+	}
-+
-+	return 0;
-+}
-+static void __init imx6_iwg15_enet_phy_init(void)
++static void __init imx6q_enet_phy_init(void)
 +{
 +	if (IS_BUILTIN(CONFIG_PHYLIB)) {
 +		phy_register_fixup_for_uid(PHY_ID_KSZ9031, MICREL_PHY_ID_MASK,
@@ -12038,7 +12023,7 @@ index 000000000000..91de8d8947f3
 +	}
 +}
 +
-+static void __init imx6_iwg15_1588_init(void)
++static void __init imx6q_1588_init(void)
 +{
 +	struct device_node *np;
 +	struct clk *ptp_clk;
@@ -12119,89 +12104,11 @@ index 000000000000..91de8d8947f3
 +                pr_err("failed to find fsl,imx6q-iomux-gpr regmap\n");
 +}
 +
-+#define OCOTP_MACn(n)	(0x00000620 + (n) * 0x10)
-+void __init imx6_iwg15_enet_mac_init(const char *compatible)
++static inline void imx6q_enet_init(void)
 +{
-+	struct device_node *ocotp_np, *enet_np, *from = NULL;
-+	void __iomem *base;
-+	struct property *newmac;
-+	u32 macaddr_low;
-+	u32 macaddr_high = 0;
-+	u32 macaddr1_high = 0;
-+	u8 *macaddr;
-+	int i;
-+
-+	for (i = 0; i < 2; i++) {
-+		enet_np = of_find_compatible_node(from, NULL, compatible);
-+		if (!enet_np)
-+			return;
-+
-+		from = enet_np;
-+
-+		if (of_get_mac_address(enet_np))
-+			goto put_enet_node;
-+
-+		ocotp_np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-ocotp");
-+		if (!ocotp_np) {
-+			pr_warn("failed to find ocotp node\n");
-+			goto put_enet_node;
-+		}
-+
-+		base = of_iomap(ocotp_np, 0);
-+		if (!base) {
-+			pr_warn("failed to map ocotp\n");
-+			goto put_ocotp_node;
-+		}
-+
-+		macaddr_low = readl_relaxed(base + OCOTP_MACn(1));
-+		if (i)
-+			macaddr1_high = readl_relaxed(base + OCOTP_MACn(2));
-+		else
-+			macaddr_high = readl_relaxed(base + OCOTP_MACn(0));
-+
-+		newmac = kzalloc(sizeof(*newmac) + 6, GFP_KERNEL);
-+		if (!newmac)
-+			goto put_ocotp_node;
-+
-+		newmac->value = newmac + 1;
-+		newmac->length = 6;
-+		newmac->name = kstrdup("local-mac-address", GFP_KERNEL);
-+		if (!newmac->name) {
-+			kfree(newmac);
-+			goto put_ocotp_node;
-+		}
-+
-+		macaddr = newmac->value;
-+		if (i) {
-+			macaddr[5] = (macaddr_low >> 16) & 0xff;
-+			macaddr[4] = (macaddr_low >> 24) & 0xff;
-+			macaddr[3] = macaddr1_high & 0xff;
-+			macaddr[2] = (macaddr1_high >> 8) & 0xff;
-+			macaddr[1] = (macaddr1_high >> 16) & 0xff;
-+			macaddr[0] = (macaddr1_high >> 24) & 0xff;
-+		} else {
-+			macaddr[5] = macaddr_high & 0xff;
-+			macaddr[4] = (macaddr_high >> 8) & 0xff;
-+			macaddr[3] = (macaddr_high >> 16) & 0xff;
-+			macaddr[2] = (macaddr_high >> 24) & 0xff;
-+			macaddr[1] = macaddr_low & 0xff;
-+			macaddr[0] = (macaddr_low >> 8) & 0xff;
-+		}
-+
-+		of_update_property(enet_np, newmac);
-+
-+put_ocotp_node:
-+	of_node_put(ocotp_np);
-+put_enet_node:
-+	of_node_put(enet_np);
-+	}
-+}
-+
-+static inline void imx6_iwg15_enet_init(void)
-+{
-+	imx6_iwg15_enet_mac_init("fsl,imx6q-fec");
-+	imx6_iwg15_enet_phy_init();
-+	imx6_iwg15_1588_init();
++	imx6_enet_mac_init("fsl,imx6q-fec", "fsl,imx6q-ocotp");
++	imx6q_enet_phy_init();
++	imx6q_1588_init();
 +	if (cpu_is_imx6q() && imx_get_soc_revision() == IMX_CHIP_REVISION_2_0)
 +		imx6q_enet_clk_sel();
 +	imx6_iwg15_enet_plt_init();
@@ -12261,25 +12168,25 @@ index 000000000000..91de8d8947f3
 +	{ /* sentinel */ }
 +};
 +
-+static void __init imx6_iwg15_init_machine(void)
++static void __init imx6q_init_machine(void)
 +{
 +	struct device *parent;
 +
 +	if (cpu_is_imx6dl()) {
 +		if (num_online_cpus() == 2)
-+			imx_print_silicon_rev("i.MX6DL",imx_get_soc_revision());
++			imx_print_silicon_rev("i.MX6DL", imx_get_soc_revision());
 +		else
-+			imx_print_silicon_rev("i.MX6S",imx_get_soc_revision());
-+	} else if (cpu_is_imx6q()  && imx_get_soc_revision() == IMX_CHIP_REVISION_2_0) {
++			imx_print_silicon_rev("i.MX6S", imx_get_soc_revision());
++	} else if (cpu_is_imx6q() && imx_get_soc_revision() == IMX_CHIP_REVISION_2_0) {
 +		if (num_online_cpus() == 4)
-+			imx_print_silicon_rev("i.MX6QP",IMX_CHIP_REVISION_1_0);
++			imx_print_silicon_rev("i.MX6QP", IMX_CHIP_REVISION_1_0);
 +		else
-+			imx_print_silicon_rev("i.MX6DP",IMX_CHIP_REVISION_1_0);
++			imx_print_silicon_rev("i.MX6DP", IMX_CHIP_REVISION_1_0);
 +	} else if (cpu_is_imx6q()) {
 +		if (num_online_cpus() == 4)
-+			imx_print_silicon_rev("i.MX6Q",imx_get_soc_revision());
++			imx_print_silicon_rev("i.MX6Q", imx_get_soc_revision());
 +		else
-+			imx_print_silicon_rev("i.MX6D",imx_get_soc_revision());
++			imx_print_silicon_rev("i.MX6D", imx_get_soc_revision());
 +	}
 +
 +	mxc_arch_reset_init_dt();
@@ -12291,7 +12198,7 @@ index 000000000000..91de8d8947f3
 +	of_platform_populate(NULL, of_default_bus_match_table,
 +					imx6_iwg15_auxdata_lookup, parent);
 +
-+	imx6_iwg15_enet_init();
++	imx6q_enet_init();
 +	imx_anatop_init();
 +	cpu_is_imx6q() ?  imx6q_pm_init() : imx6dl_pm_init();
 +	imx6q_axi_init();
@@ -12300,13 +12207,14 @@ index 000000000000..91de8d8947f3
 +	imx6_iwg15_hdmi_cec_init();
 +	print_board_info();
 +}
++
 +#define OCOTP_CFG3			0x440
 +#define OCOTP_CFG3_SPEED_SHIFT		16
 +#define OCOTP_CFG3_SPEED_1P2GHZ		0x3
 +#define OCOTP_CFG3_SPEED_996MHZ		0x2
 +#define OCOTP_CFG3_SPEED_852MHZ		0x1
 +
-+static void __init imx6_iwg15_opp_check_speed_grading(struct device *cpu_dev)
++static void __init imx6q_opp_check_speed_grading(struct device *cpu_dev)
 +{
 +	struct device_node *np;
 +	void __iomem *base;
@@ -12359,7 +12267,7 @@ index 000000000000..91de8d8947f3
 +	of_node_put(np);
 +}
 +
-+static void __init imx6_iwg15_opp_init(void)
++static void __init imx6q_opp_init(void)
 +{
 +	struct device_node *np;
 +	struct device *cpu_dev = get_cpu_device(0);
@@ -12379,17 +12287,17 @@ index 000000000000..91de8d8947f3
 +		goto put_node;
 +	}
 +
-+	imx6_iwg15_opp_check_speed_grading(cpu_dev);
++	imx6q_opp_check_speed_grading(cpu_dev);
 +
 +put_node:
 +	of_node_put(np);
 +}
 +
-+static struct platform_device imx6_iwg15_cpufreq_pdev = {
++static struct platform_device imx6q_cpufreq_pdev = {
 +	.name = "imx6q-cpufreq",
 +};
 +
-+static void __init imx6_iwg15_init_late(void)
++static void __init imx6q_init_late(void)
 +{
 +	/*
 +	 * WAIT mode is broken on TO 1.0 and 1.1, so there is no point
@@ -12401,14 +12309,14 @@ index 000000000000..91de8d8947f3
 +		imx6q_cpuidle_init();
 +
 +	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ)) {
-+		imx6_iwg15_opp_init();
-+		platform_device_register(&imx6_iwg15_cpufreq_pdev);
++		imx6q_opp_init();
++		platform_device_register(&imx6q_cpufreq_pdev);
 +	}
 +
 +	imx6_iwg15_flexcan_fixup_auto();
 +}
 +
-+static void __init imx6_iwg15_map_io(void)
++static void __init imx6q_map_io(void)
 +{
 +	debug_ll_io_init();
 +	imx_scu_map_io();
@@ -12416,7 +12324,7 @@ index 000000000000..91de8d8947f3
 +	imx_busfreq_map_io();
 +}
 +
-+static void __init imx6_iwg15_init_irq(void)
++static void __init imx6q_init_irq(void)
 +{
 +	imx_gpc_check_dt();
 +	imx_init_revision_from_anatop();
@@ -12425,7 +12333,7 @@ index 000000000000..91de8d8947f3
 +	irqchip_init();
 +}
 +
-+static const char * const imx6_iwg15_dt_compat[] __initconst = {
++static const char * const imx6q_dt_compat[] __initconst = {
 +	"iw,qd_iwg15m_sm",
 +	"iw,dls_iwg15m_sm",
 +	NULL,
@@ -12439,15 +12347,15 @@ index 000000000000..91de8d8947f3
 +	 */
 +	.dma_zone_size	= (SZ_2G - SZ_256M),
 +	.smp		= smp_ops(imx_smp_ops),
-+	.map_io		= imx6_iwg15_map_io,
-+	.init_irq	= imx6_iwg15_init_irq,
-+	.init_machine	= imx6_iwg15_init_machine,
-+	.init_late      = imx6_iwg15_init_late,
-+	.dt_compat	= imx6_iwg15_dt_compat,
++	.map_io		= imx6q_map_io,
++	.init_irq	= imx6q_init_irq,
++	.init_machine	= imx6q_init_machine,
++	.init_late      = imx6q_init_late,
++	.dt_compat	= imx6q_dt_compat,
 +	.restart	= mxc_restart,
 +MACHINE_END
 diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
-index 568d06e4ec62..33c49da6c009 100644
+index 568d06e4ec62..919cafd368eb 100644
 --- a/arch/arm/mach-imx/system.c
 +++ b/arch/arm/mach-imx/system.c
 @@ -34,6 +34,10 @@
@@ -12469,7 +12377,7 @@ index 568d06e4ec62..33c49da6c009 100644
 +	/* Increase the PMIC's SW1AB (VDDARM) voltage to 1.15 
 +	   Otherwise system may not get to reboot in LDO bypass mode 
 +	 */
-+       if (of_machine_is_compatible("iw,qd_iwg15m_sm") || of_machine_is_compatible("iw,dls_iwg15m_sm"))
++	if (of_machine_is_compatible("iw,qd_iwg15m_sm") || of_machine_is_compatible("iw,dls_iwg15m_sm"))
 +	{
 +		struct device_node *np;
 +		u32 ldo_bypass;
@@ -13469,18 +13377,6 @@ index 805df6b33625..2520095b3443 100644
  	return imx2_wdt_ping(wdog);
  }
  
-diff --git a/include/linux/libata.h b/include/linux/libata.h
-index e0e33787c485..6ea4c30c663a 100644
---- a/include/linux/libata.h
-+++ b/include/linux/libata.h
-@@ -1955,6 +1955,6 @@ static inline u8 ata_wait_idle(struct ata_port *ap)
- 
- 	return status;
- }
--#endif /* CONFIG_ATA_SFF */
-+#endif /* CONFIG_ATA_SFF */ 
- 
- #endif /* __LINUX_LIBATA_H__ */
 diff --git a/include/linux/regulator/pfuze100.h b/include/linux/regulator/pfuze100.h
 index 70c6c66c5bcf..9c0b9c43b2d0 100644
 --- a/include/linux/regulator/pfuze100.h
