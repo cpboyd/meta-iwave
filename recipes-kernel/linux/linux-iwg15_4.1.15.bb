@@ -14,7 +14,8 @@ LOCALVERSION = "-${SRCBRANCH}"
 KERNEL_SRC ?= "git://source.codeaurora.org/external/imx/linux-imx.git;protocol=https"
 SRCREV = "30278abfe0977b1d2f065271ce1ea23c0e2d1b6e"
 SRC_URI = "${KERNEL_SRC};branch=${SRCBRANCH} \
-	    file://0001-iwave-linux_${PV}.patch"
+	    file://0001-iwave-linux_${PV}.patch \
+"
 
 DEFAULT_PREFERENCE = "1"
 
