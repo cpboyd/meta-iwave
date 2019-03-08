@@ -33,10 +33,10 @@ index 19d2f1d9c58..e103e134f51 100644
  #define MX6_MMDC_P0_MDCTL	0x021b0000
  #define MX6_MMDC_P0_MDPDC	0x021b0004
 diff --git a/arch/arm/include/asm/arch-mx6/mx6-pins.h b/arch/arm/include/asm/arch-mx6/mx6-pins.h
-index c2ce9532069..cc8b7a3ae3d 100644
+index c2ce9532069..7412b34013e 100644
 --- a/arch/arm/include/asm/arch-mx6/mx6-pins.h
 +++ b/arch/arm/include/asm/arch-mx6/mx6-pins.h
-@@ -11,6 +11,14 @@
+@@ -11,6 +11,13 @@
  #define MX6_PAD_DECLARE(prefix, name, pco, mc, mm, sio, si, pc) \
  	prefix##name = IOMUX_PAD(pco, mc, mm, sio, si, pc)
  
@@ -46,16 +46,15 @@ index c2ce9532069..cc8b7a3ae3d 100644
 +        MX6_PAD_DECLARE(MX6Q_PAD_,name, pco, mc, mm, sio, si, pc),
 +#include "mx6_pins_iwg15.h"
 +};
-+#endif
-+#ifndef IWCONFIG_MX6_IWG15
++#else /* IWCONFIG_MX6_IWG15 */
  #ifdef CONFIG_MX6QDL
  enum {
  #define MX6_PAD_DECL(name, pco, mc, mm, sio, si, pc) \
-@@ -46,5 +54,6 @@ enum {
+@@ -46,5 +53,6 @@ enum {
  #else
  #error "Please select cpu"
  #endif	/* CONFIG_MX6Q */
-+#endif
++#endif /* IWCONFIG_MX6_IWG15 */
  
  #endif	/*__ASM_ARCH_MX6_PINS_H__ */
 diff --git a/arch/arm/include/asm/arch-mx6/mx6_pins_iwg15.h b/arch/arm/include/asm/arch-mx6/mx6_pins_iwg15.h
@@ -3469,7 +3468,7 @@ index d5a5a7a38be..da65d757e39 100644
  source "board/phytec/pcm058/Kconfig"
  source "board/phytec/pfla02/Kconfig"
 diff --git a/arch/arm/mach-imx/mx6/soc.c b/arch/arm/mach-imx/mx6/soc.c
-index 468259ea360..e217d578625 100644
+index 468259ea360..f14674a979f 100644
 --- a/arch/arm/mach-imx/mx6/soc.c
 +++ b/arch/arm/mach-imx/mx6/soc.c
 @@ -757,6 +757,60 @@ void get_board_serial(struct tag_serialnr *serialnr)
@@ -3545,32 +3544,6 @@ index 468259ea360..e217d578625 100644
  		set_ldo_voltage(LDO_ARM, 975);
  	else
  		set_ldo_voltage(LDO_ARM, 1150);
-@@ -1077,6 +1135,25 @@ void finish_anatop_bypass(void)
- }
- #endif
- 
-+#ifdef CONFIG_DYNAMIC_MMC_DEVNO
-+int get_mmc_env_devno(void)
-+{
-+        uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
-+
-+#ifdef IWCONFIG_MX6_IWG15
-+        /* IWG15M: MMC:Slot No fixed at dynamic env store for SD3 & SD4 */
-+        /* BOOT_CFG2[3] and BOOT_CFG2[4] */
-+         if (((soc_sbmr & 0x00001800) >> 11) > 1 )
-+                return (((soc_sbmr & 0x00001800) >> 11 ) - 1);
-+        else
-+                return (soc_sbmr & 0x00001800) >> 11;
-+#else
-+        /* BOOT_CFG2[3] and BOOT_CFG2[4] */
-+        return (soc_sbmr & 0x00001800) >> 11;
-+#endif
-+}
-+#endif
-+
- void gpr_init(void)
- {
- 	struct iomuxc *iomux = (struct iomuxc *)IOMUXC_BASE_ADDR;
 diff --git a/board/freescale/mx6_iwg15m_sm/Kconfig b/board/freescale/mx6_iwg15m_sm/Kconfig
 new file mode 100644
 index 00000000000..62422a1ca41
@@ -5891,33 +5864,8 @@ index 00000000000..7df66d04cd0
 +
 +/* include the common plugin code here */
 +#include <asm/arch/mx6_plugin.S>
-diff --git a/cmd/nvedit.c b/cmd/nvedit.c
-index 4cb25b82486..706d65b8988 100644
---- a/cmd/nvedit.c
-+++ b/cmd/nvedit.c
-@@ -52,6 +52,7 @@ DECLARE_GLOBAL_DATA_PTR;
- 	!defined(CONFIG_ENV_IS_IN_SPI_FLASH)	&& \
- 	!defined(CONFIG_ENV_IS_IN_REMOTE)	&& \
- 	!defined(CONFIG_ENV_IS_IN_UBI)		&& \
-+	!defined(CONFIG_ENV_IS_IN_DYNAMIC) 	&& \
- 	!defined(CONFIG_ENV_IS_NOWHERE)
- # error Define one of CONFIG_ENV_IS_IN_{EEPROM|FLASH|MMC|FAT|EXT4|\
- NAND|NVRAM|ONENAND|SATA|SPI_FLASH|REMOTE|UBI} or CONFIG_ENV_IS_NOWHERE
-diff --git a/cmd/sata.c b/cmd/sata.c
-index 1df9674b5d2..e6f596d5ee7 100644
---- a/cmd/sata.c
-+++ b/cmd/sata.c
-@@ -19,7 +19,7 @@
- #include <dm/device-internal.h>
- #include <dm/uclass-internal.h>
- 
--static int sata_curr_device = -1;
-+int sata_curr_device = -1;
- 
- int sata_remove(int devnum)
- {
 diff --git a/common/autoboot.c b/common/autoboot.c
-index 08a0798eeae..703845a5f06 100644
+index 08a0798eeae..4b1c3dd0fcc 100644
 --- a/common/autoboot.c
 +++ b/common/autoboot.c
 @@ -295,6 +295,7 @@ const char *bootdelay_process(void)
@@ -5933,13 +5881,13 @@ index 08a0798eeae..703845a5f06 100644
  #if defined(is_boot_from_usb)
  	if (is_boot_from_usb() && env_get("bootcmd_mfg")) {
 +#ifdef IWCONFIG_MX6_IWG15
-+                if (pmic_enabled) {
-+                        s = env_get("bootcmd_mfg_pmic");
-+                        printf("Run bootcmd_mfg_pmic: %s\n", s);
-+                } else {
-+                        s = env_get("bootcmd_mfg");
-+                        printf("Run bootcmd_mfg: %s\n", s);
-+                }
++		if (pmic_enabled) {
++				s = env_get("bootcmd_mfg_pmic");
++				printf("Run bootcmd_mfg_pmic: %s\n", s);
++		} else {
++				s = env_get("bootcmd_mfg");
++				printf("Run bootcmd_mfg: %s\n", s);
++		}
 +#else
  		s = env_get("bootcmd_mfg");
  		printf("Run bootcmd_mfg: %s\n", s);
@@ -5968,10 +5916,10 @@ index 8d27bc70607..c7f877855e6 100644
  #endif
 diff --git a/configs/mx6_iwg15m_sm_defconfig b/configs/mx6_iwg15m_sm_defconfig
 new file mode 100644
-index 00000000000..95a319fdd65
+index 00000000000..aaf048cc94c
 --- /dev/null
 +++ b/configs/mx6_iwg15m_sm_defconfig
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,55 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_MX6=y
 +CONFIG_TARGET_MX6_IWG15M_SM=y
@@ -6002,6 +5950,7 @@ index 00000000000..95a319fdd65
 +CONFIG_DEFAULT_FDT_FILE="imx6qd-iwg15m-sm_ldobypass.dtb"
 +CONFIG_DOS_PARTITION=y
 +CONFIG_FEC_MXC=y
++CONFIG_HUSH_PARSER=y
 +CONFIG_MMC=y
 +CONFIG_MXC_GPIO=y
 +CONFIG_MXC_UART=y
@@ -6024,13 +5973,14 @@ index 00000000000..95a319fdd65
 +CONFIG_SYS_TEXT_BASE=0x17800000
 +
 +# Not MFG:
++CONFIG_ENV_IS_IN_SPI_FLASH=y
 +CONFIG_USE_IMXIMG_PLUGIN=y
 diff --git a/configs/mx6_iwg15m_sm_dls_mfg_defconfig b/configs/mx6_iwg15m_sm_dls_mfg_defconfig
 new file mode 100644
-index 00000000000..89ba2688864
+index 00000000000..014adf80769
 --- /dev/null
 +++ b/configs/mx6_iwg15m_sm_dls_mfg_defconfig
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_MX6=y
 +CONFIG_TARGET_MX6_IWG15M_SM_MFG=y
@@ -6059,6 +6009,7 @@ index 00000000000..89ba2688864
 +CONFIG_DEFAULT_FDT_FILE="imx6qd-iwg15m-sm_ldobypass.dtb"
 +CONFIG_DOS_PARTITION=y
 +CONFIG_FEC_MXC=y
++CONFIG_HUSH_PARSER=y
 +CONFIG_MMC=y
 +CONFIG_MXC_GPIO=y
 +CONFIG_MXC_UART=y
@@ -6080,10 +6031,10 @@ index 00000000000..89ba2688864
 +CONFIG_SYS_TEXT_BASE=0x17800000
 diff --git a/configs/mx6_iwg15m_sm_qd_mfg_defconfig b/configs/mx6_iwg15m_sm_qd_mfg_defconfig
 new file mode 100644
-index 00000000000..667e1dc7509
+index 00000000000..c313b9cf712
 --- /dev/null
 +++ b/configs/mx6_iwg15m_sm_qd_mfg_defconfig
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_MX6=y
 +CONFIG_TARGET_MX6_IWG15M_SM_MFG=y
@@ -6112,6 +6063,7 @@ index 00000000000..667e1dc7509
 +CONFIG_DEFAULT_FDT_FILE="imx6qd-iwg15m-sm_ldobypass.dtb"
 +CONFIG_DOS_PARTITION=y
 +CONFIG_FEC_MXC=y
++CONFIG_HUSH_PARSER=y
 +CONFIG_MMC=y
 +CONFIG_MXC_GPIO=y
 +CONFIG_MXC_UART=y
@@ -6132,57 +6084,46 @@ index 00000000000..667e1dc7509
 +CONFIG_SYS_LONGHELP=y
 +CONFIG_SYS_TEXT_BASE=0x17800000
 diff --git a/drivers/net/fec_mxc.c b/drivers/net/fec_mxc.c
-index cc23aeacf5c..d962ba078e1 100644
+index cc23aeacf5c..885780505d2 100644
 --- a/drivers/net/fec_mxc.c
 +++ b/drivers/net/fec_mxc.c
-@@ -1171,6 +1171,32 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
+@@ -1171,6 +1171,31 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
  	bus = fec_get_miibus((ulong)base_mii, dev_id);
  	if (!bus)
  		return -ENOMEM;
 +
 +#ifdef IWCONFIG_MX6_IWG15
-+        /* IWG15: Discovering Phy address*/
-+        unsigned int addrs;
-+        for (addrs = 0; addrs < 0x20; addrs++)
-+        {
-+                int id = 0;
-+                int val;
-+                val = fec_phy_read(bus, addrs, 0, 0x03);
-+                id = val;
-+                if (id == 0xFFFF)
-+                        continue;
++	/* IWG15: Discovering Phy address*/
++	unsigned int addrs;
++	for (addrs = 0; addrs < 0x20; addrs++)
++	{
++		int id = 0;
++		int val;
++		val = fec_phy_read(bus, addrs, 0, 0x03);
++		id = val;
++		if (id == 0xFFFF)
++			continue;
 +
-+                val = fec_phy_read(bus, addrs, 0, 0x2);
-+                if (val == 0xFFFF)
-+                        continue;
++		val = fec_phy_read(bus, addrs, 0, 0x2);
++		if (val == 0xFFFF)
++			continue;
 +
-+                id |= val << 16;
++		id |= val << 16;
 +
-+                printf("PHY indentify @ 0x%x = 0x%08x\n", addrs, id);
++		printf("PHY indentify @ 0x%x = 0x%08x\n", addrs, id);
 +
-+                phy_id = addrs;
-+
-+        }
++		phy_id = addrs;
++	}
 +#endif
 +
  #ifdef CONFIG_PHYLIB
  	phydev = phy_find_by_mask(bus, 1 << phy_id, PHY_INTERFACE_MODE_RGMII);
  	if (!phydev) {
 diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
-index d137bfdca0b..91d0e618867 100644
+index d137bfdca0b..a514558bda4 100644
 --- a/drivers/thermal/imx_thermal.c
 +++ b/drivers/thermal/imx_thermal.c
-@@ -44,6 +44,9 @@ struct thermal_data {
- 	int critical;
- 	int minc;
- 	int maxc;
-+#ifdef IWCONFIG_MX6_IWG15
-+	int passive;
-+#endif
- };
- 
- #if defined(CONFIG_MX6)
-@@ -215,6 +218,30 @@ int imx_thermal_get_temp(struct udevice *dev, int *temp)
+@@ -215,6 +215,30 @@ int imx_thermal_get_temp(struct udevice *dev, int *temp)
  
  	cpu_tmp = read_cpu_temperature(dev);
  
@@ -6213,776 +6154,12 @@ index d137bfdca0b..91d0e618867 100644
  	while (cpu_tmp >= priv->critical) {
  		printf("CPU Temperature (%dC) too close to max (%dC)",
  		       cpu_tmp, priv->maxc);
-diff --git a/env/Kconfig b/env/Kconfig
-index 73332ceeb0e..d51a88be8af 100644
---- a/env/Kconfig
-+++ b/env/Kconfig
-@@ -21,6 +21,12 @@ config ENV_IS_NOWHERE
- 	  stored. U-Boot will therefore always start up with a default
- 	  environment.
- 
-+config ENV_IS_IN_DYNAMIC
-+	bool "Environment is dynamic"
-+	depends on !CHAIN_OF_TRUST
-+	help
-+	  Define this if you want to use the dynamic environment.
-+
- config ENV_IS_IN_EEPROM
- 	bool "Environment in EEPROM"
- 	depends on !CHAIN_OF_TRUST
-diff --git a/env/Makefile b/env/Makefile
-index 7ce8231d9a7..af3d6002315 100644
---- a/env/Makefile
-+++ b/env/Makefile
-@@ -20,6 +20,8 @@ obj-$(CONFIG_ENV_IS_IN_FLASH) += flash.o
- obj-$(CONFIG_ENV_IS_IN_MMC) += mmc.o
- obj-$(CONFIG_ENV_IS_IN_FAT) += fat.o
- obj-$(CONFIG_ENV_IS_IN_EXT4) += ext4.o
-+obj-$(CONFIG_ENV_IS_IN_DYNAMIC) += iwg15.o
-+obj-$(CONFIG_ENV_IS_IN_DYNAMIC) += embedded.o
- obj-$(CONFIG_ENV_IS_IN_NAND) += nand.o
- obj-$(CONFIG_ENV_IS_IN_NVRAM) += nvram.o
- obj-$(CONFIG_ENV_IS_IN_ONENAND) += onenand.o
-diff --git a/env/common.c b/env/common.c
-index f21ff700969..86c75ec5b7e 100644
---- a/env/common.c
-+++ b/env/common.c
-@@ -18,6 +18,11 @@
- 
- DECLARE_GLOBAL_DATA_PTR;
- 
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+extern int iwg15m_boot_device (void);
-+extern int get_mmc_env_devno(void);
-+#endif
-+
- /************************************************************************
-  * Default settings to be used when no valid environment is found
-  */
-@@ -62,11 +67,48 @@ char *env_get_default(const char *name)
- void set_default_env(const char *s)
- {
- 	int flags = 0;
--
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+	switch (iwg15m_boot_device()) {
-+		case SATA_BOOT_DEV:
-+			if (sizeof(default_environment_sata) > ENV_SIZE) {
-+				puts ("*** Error - default environment is too large\n\n");
-+				return;
-+			}
-+			break;
-+		case SD_BOOT_DEV:
-+			if (get_mmc_env_devno()) {
-+				if (sizeof(default_environment_msd) > ENV_SIZE) {
-+					puts ("*** Error - default environment is too large\n\n");
-+					return;
-+				}
-+			}
-+			else {
-+				if (sizeof(default_environment_ssd) > ENV_SIZE) {
-+					puts ("*** Error - default environment is too large\n\n");
-+					return;
-+				}
-+			}
-+			break;
-+		case SPI_BOOT_DEV:
-+		case MMC_BOOT_DEV:
-+			if (sizeof(default_environment_emmc) > ENV_SIZE) {
-+				puts ("*** Error - default environment is too large\n\n");
-+				return;
-+			}
-+			break;
-+		default:
-+			if (sizeof(default_environment) > ENV_SIZE) {
-+				puts ("*** Error - default environment is too large\n\n");
-+				return;
-+			}
-+			break;
-+	}
-+#else
- 	if (sizeof(default_environment) > ENV_SIZE) {
- 		puts("*** Error - default environment is too large\n\n");
- 		return;
- 	}
-+#endif
- 
- 	if (s) {
- 		if (*s == '!') {
-@@ -98,9 +140,36 @@ int set_default_vars(int nvars, char * const vars[])
- 	 * Special use-case: import from default environment
- 	 * (and use \0 as a separator)
- 	 */
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+	switch (iwg15m_boot_device()) {
-+		case SATA_BOOT_DEV:
-+			return himport_r(&env_htab, (const char *)default_environment_sata,
-+								sizeof(default_environment_sata), '\0',
-+								H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+		case SD_BOOT_DEV:
-+			if (get_mmc_env_devno()) {
-+				return himport_r(&env_htab, (const char *)default_environment_msd,
-+									sizeof(default_environment_msd), '\0',
-+									H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+			}
-+			return himport_r(&env_htab, (const char *)default_environment_ssd,
-+								sizeof(default_environment_ssd), '\0',
-+								H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+		case SPI_BOOT_DEV:
-+		case MMC_BOOT_DEV:
-+			return himport_r(&env_htab, (const char *)default_environment_emmc,
-+								sizeof(default_environment_emmc), '\0',
-+								H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+		default:
-+			return himport_r(&env_htab, (const char *)default_environment,
-+								sizeof(default_environment), '\0',
-+								H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+	}
-+#else
- 	return himport_r(&env_htab, (const char *)default_environment,
- 				sizeof(default_environment), '\0',
- 				H_NOCLEAR | H_INTERACTIVE, 0, nvars, vars);
-+#endif
- }
- 
- /*
-diff --git a/env/env.c b/env/env.c
-index 042a8c65fad..0a6fb1c4d1d 100644
---- a/env/env.c
-+++ b/env/env.c
-@@ -10,6 +10,17 @@
- 
- DECLARE_GLOBAL_DATA_PTR;
- 
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+/* references to names in env/common.c */
-+extern uchar default_environment_ssd[];
-+extern uchar default_environment_msd[];
-+extern uchar default_environment_emmc[];
-+extern uchar default_environment_sata[];
-+extern uchar default_environment_usb[];
-+extern int get_mmc_env_devno(void);
-+extern int iwg15m_boot_device (void);
-+#endif
-+
- static struct env_driver *_env_driver_lookup(enum env_location loc)
- {
- 	struct env_driver *drv;
-@@ -158,7 +169,23 @@ __weak int env_get_char_spec(int index)
- int env_get_char(int index)
- {
- 	if (gd->env_valid == ENV_INVALID)
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+		switch (iwg15m_boot_device()) {
-+			case SATA_BOOT_DEV:
-+				return default_environment_sata[index];
-+			case SD_BOOT_DEV:
-+				if (get_mmc_env_devno())
-+					return default_environment_msd[index];
-+				return default_environment_ssd[index];
-+			case SPI_BOOT_DEV:
-+			case MMC_BOOT_DEV:
-+				return default_environment_emmc[index];
-+			default:
-+				return default_environment[index];
-+		}
-+#else
- 		return default_environment[index];
-+#endif
- 	else
- 		return env_get_char_spec(index);
- }
-diff --git a/env/iwg15.c b/env/iwg15.c
-new file mode 100644
-index 00000000000..6bd346bc563
---- /dev/null
-+++ b/env/iwg15.c
-@@ -0,0 +1,563 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2
-+ * as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+ 
-+/*
-+ * @file env_iwg15m.c 
-+ *
-+ * @brief Dynamic Bootarguments Saving Options for Differnet Boot devices
-+ *
-+ * @ingroup Auto Bootarguments Saving
-+ */
-+
-+/* #define DEBUG */
-+
-+#include <memalign.h>
-+
-+#include <asm/io.h>
-+#include <asm/arch/sys_proto.h>
-+#include <command.h>
-+#include <environment.h>
-+#include <linux/stddef.h>
-+#include <sata.h>
-+#include <malloc.h>
-+#include <mmc.h>
-+#include <spi.h>
-+#include <spi_flash.h>
-+#include <search.h>
-+#include <errno.h>
-+
-+#ifndef CONFIG_ENV_SPI_BUS
-+# define CONFIG_ENV_SPI_BUS	0
-+#endif
-+#ifndef CONFIG_ENV_SPI_CS
-+# define CONFIG_ENV_SPI_CS		0
-+#endif
-+#ifndef CONFIG_ENV_SPI_MAX_HZ
-+# define CONFIG_ENV_SPI_MAX_HZ	1000000
-+#endif
-+#ifndef CONFIG_ENV_SPI_MODE
-+# define CONFIG_ENV_SPI_MODE	SPI_MODE_3
-+#endif
-+
-+#ifdef CONFIG_ENV_OFFSET_REDUND
-+static ulong env_offset		= CONFIG_ENV_OFFSET;
-+static ulong env_new_offset	= CONFIG_ENV_OFFSET_REDUND;
-+
-+#define ACTIVE_FLAG	1
-+#define OBSOLETE_FLAG	0
-+#endif /* CONFIG_ENV_OFFSET_REDUND */
-+
-+/* references to names in env/common.c */
-+extern uchar default_environment_ssd[];
-+extern uchar default_environment_msd[];
-+extern uchar default_environment_emmc[];
-+extern uchar default_environment_sata[];
-+extern uchar default_environment_usb[];
-+extern int get_mmc_env_devno(void);
-+
-+char * env_name_spec = "NONE";
-+
-+#ifdef ENV_IS_EMBEDDED
-+env_t *env_ptr = &environment
-+#else /* ! ENV_IS_EMBEDDED */
-+env_t *env_ptr;
-+#endif /* ENV_IS_EMBEDDED */
-+
-+static int mmc_env_devno;
-+extern int sata_curr_device;
-+static struct spi_flash *env_flash;
-+
-+/* local functions */
-+#if !defined(ENV_IS_EMBEDDED)
-+static void use_default(void);
-+#endif
-+
-+DECLARE_GLOBAL_DATA_PTR;
-+
-+/* IWG15M: BOOT DEV: Checking the boot device */
-+int iwg15m_boot_device (void)
-+{
-+        uint soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
-+        uint bt_mem_ctl = (soc_sbmr & 0x000000FF) >> 4 ;
-+	int boot_dev = 3;
-+
-+        switch (bt_mem_ctl) {
-+                case 0x2:
-+                        boot_dev = SATA_BOOT_DEV;
-+                        break;
-+                case 0x3:
-+			boot_dev = SPI_BOOT_DEV;
-+			break;
-+                case 0x4:
-+                case 0x5:
-+                        boot_dev = SD_BOOT_DEV;
-+                        break;
-+                case 0x6:
-+                case 0x7:
-+                        boot_dev = MMC_BOOT_DEV;
-+                        break;
-+                default:
-+                        boot_dev = UNKNOWN_BOOT_DEV;
-+                        break;
-+        }
-+        return boot_dev;
-+}
-+__weak int mmc_get_env_addr(struct mmc *mmc, u32 *env_addr)
-+{
-+        *env_addr = CONFIG_ENV_OFFSET;
-+	return 0;
-+}
-+
-+__weak int mmc_get_env_devno(void)
-+{
-+        return CONFIG_SYS_MMC_ENV_DEV;
-+}
-+
-+uchar env_get_char_spec(int index)
-+{
-+	return *((uchar *)(gd->env_addr + index));
-+}
-+
-+int env_iwg15_init(void)
-+{
-+	/* use default */
-+	gd->env_valid = 1;
-+
-+	switch (iwg15m_boot_device()) {
-+		case SATA_BOOT_DEV:
-+			gd->env_addr = (ulong)&default_environment_sata[0];
-+			break;
-+		case SPI_BOOT_DEV:
-+			gd->env_addr = (ulong)&default_environment_emmc[0];
-+			break;
-+		case SD_BOOT_DEV:
-+			mmc_env_devno = get_mmc_env_devno();
-+			if (mmc_env_devno)
-+				gd->env_addr = (ulong)&default_environment_msd[0];
-+			else
-+				gd->env_addr = (ulong)&default_environment_ssd[0];
-+			break;
-+		case MMC_BOOT_DEV:
-+			mmc_env_devno = get_mmc_env_devno();
-+			gd->env_addr = (ulong)&default_environment_emmc[0];
-+			break;
-+		default:
-+			gd->env_addr = (ulong)&default_environment[0];
-+			break;
-+	}
-+
-+	return 0;
-+}
-+
-+static int init_mmc_for_env(struct mmc *mmc)
-+{
-+	if (!mmc) {
-+		printf("No MMC card found\n");
-+		return -1;
-+	}
-+
-+	if (mmc_init(mmc)) {
-+		printf("MMC init failed\n");
-+		return  -1;
-+	}
-+
-+#ifdef CONFIG_SYS_MMC_ENV_PART
-+	if (CONFIG_SYS_MMC_ENV_PART != mmc->block_dev.hwpart ) {
-+		int mmc_env_devno = mmc_get_env_devno();
-+
-+		if (mmc_switch_part(mmc_env_devno,
-+				    CONFIG_SYS_MMC_ENV_PART)) {
-+			puts("MMC partition switch failed\n");
-+			return -1;
-+		}
-+	}
-+#endif
-+
-+	return 0;
-+}
-+
-+static void fini_mmc_for_env(struct mmc *mmc)
-+{
-+#ifdef CONFIG_SYS_MMC_ENV_PART
-+	int mmc_env_devno = mmc_get_env_devno();
-+
-+	if (CONFIG_SYS_MMC_ENV_PART != mmc->block_dev.hwpart)
-+		mmc_switch_part(mmc_env_devno,
-+				mmc->block_dev.hwpart);
-+#endif
-+}
-+
-+#ifdef CONFIG_CMD_SAVEENV
-+
-+static inline int write_env_mmc(struct mmc *mmc, unsigned long size,
-+		unsigned long offset, const void *buffer)
-+{
-+	uint blk_start, blk_cnt, n;
-+	int mmc_env_devno = get_mmc_env_devno();
-+
-+	blk_start = ALIGN(offset, mmc->write_bl_len) / mmc->write_bl_len;
-+	blk_cnt   = ALIGN(size, mmc->write_bl_len) / mmc->write_bl_len;
-+
-+	n = mmc->block_dev.block_write(mmc_env_devno, blk_start,
-+			blk_cnt, (u_char *)buffer);
-+
-+	return (n == blk_cnt) ? 0 : -1;
-+}
-+
-+inline int write_env_sata(struct blk_desc *sata, unsigned long size,
-+		unsigned long offset, const void *buffer)
-+{
-+	uint blk_start, blk_cnt, n;
-+
-+	blk_start = ALIGN(offset, sata->blksz) / sata->blksz;
-+	blk_cnt   = ALIGN(size, sata->blksz) / sata->blksz;
-+
-+	n = sata->block_write(sata_curr_device, blk_start,
-+			blk_cnt, (u_char *)buffer);
-+
-+	return (n == blk_cnt) ? 0 : -1;
-+}
-+
-+int saveenv_mmc(void)
-+{
-+
-+	ALLOC_CACHE_ALIGN_BUFFER(env_t, env_new, 1);
-+	int mmc_env_devno = get_mmc_env_devno();
-+	ssize_t	len;
-+	char	*res;
-+	struct mmc *mmc = find_mmc_device(mmc_env_devno);
-+	u32	offset;
-+	int	ret;
-+
-+	if (init_mmc_for_env(mmc))
-+		return 1;
-+
-+	if (mmc_get_env_addr(mmc, &offset)) {
-+		ret = 1;
-+		goto fini;
-+	}
-+
-+	res = (char *)&env_new->data;
-+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
-+	if (len < 0) {
-+		error("Cannot export environment: errno = %d\n", errno);
-+		ret = 1;
-+		goto fini;
-+	}
-+
-+	env_new->crc = crc32(0, &env_new->data[0], ENV_SIZE);
-+	printf("Writing to MMC(%d)... ", mmc_env_devno);
-+	if (write_env_mmc(mmc, CONFIG_ENV_SIZE, offset, (u_char *)env_new)) {
-+		puts("failed\n");
-+		ret = 1;
-+		goto fini;
-+	}
-+
-+	puts("done\n");
-+	ret = 0;
-+
-+fini:
-+	fini_mmc_for_env(mmc);
-+	return ret;
-+}
-+
-+int saveenv_sata(void)
-+{
-+	struct blk_desc *sata = NULL;
-+	env_t	env_new;
-+	ssize_t	len;
-+	char *res;
-+
-+	if (sata_curr_device == -1) {
-+		if (sata_initialize())
-+			return 1;
-+		sata_curr_device = IWCONFIG_SATA_ENV_DEV;
-+	}
-+
-+	if (sata_curr_device >= CONFIG_SYS_SATA_MAX_DEVICE) {
-+		printf("Unknown SATA(%d) device for environment!\n",
-+			sata_curr_device);
-+		return 1;
-+	}
-+
-+	sata = sata_get_dev(sata_curr_device);
-+
-+	res = (char *)&env_new.data;
-+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
-+	if (len < 0) {
-+		error("Cannot export environment: errno = %d\n", errno);
-+		return 1;
-+	}
-+	env_new.crc = crc32(0, env_new.data, ENV_SIZE);
-+
-+	printf("Writing to SATA(%d)...", sata_curr_device);
-+	if (write_env_sata(sata, CONFIG_ENV_SIZE, CONFIG_ENV_OFFSET, &env_new)) {
-+		puts("failed\n");
-+		return 1;
-+	}
-+
-+	puts("done\n");
-+	return 0;
-+}
-+
-+int saveenv_sf(void)
-+{
-+	u32	saved_size, saved_offset, sector = 1;
-+	char	*res, *saved_buffer = NULL;
-+	int	ret = 1;
-+	env_t	env_new;
-+	ssize_t	len;
-+
-+	if (!env_flash) {
-+		env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS,
-+			CONFIG_ENV_SPI_CS,
-+			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
-+		if (!env_flash) {
-+			set_default_env("!spi_flash_probe() failed");
-+			return 1;
-+		}
-+	}
-+
-+	/* Is the sector larger than the env (i.e. embedded) */
-+	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_SIZE) {
-+		saved_size = CONFIG_ENV_SECT_SIZE - CONFIG_ENV_SIZE;
-+		saved_offset = CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE;
-+		saved_buffer = malloc(saved_size);
-+		if (!saved_buffer)
-+			goto done;
-+
-+		ret = spi_flash_read(env_flash, saved_offset,
-+			saved_size, saved_buffer);
-+		if (ret)
-+			goto done;
-+	}
-+
-+	if (CONFIG_ENV_SIZE > CONFIG_ENV_SECT_SIZE) {
-+		sector = CONFIG_ENV_SIZE / CONFIG_ENV_SECT_SIZE;
-+		if (CONFIG_ENV_SIZE % CONFIG_ENV_SECT_SIZE)
-+			sector++;
-+	}
-+
-+	res = (char *)&env_new.data;
-+	len = hexport_r(&env_htab, '\0', 0, &res, ENV_SIZE, 0, NULL);
-+	if (len < 0) {
-+		error("Cannot export environment: errno = %d\n", errno);
-+		goto done;
-+	}
-+	env_new.crc = crc32(0, env_new.data, ENV_SIZE);
-+
-+	puts("Erasing SPI flash...");
-+	ret = spi_flash_erase(env_flash, CONFIG_ENV_OFFSET,
-+		sector * CONFIG_ENV_SECT_SIZE);
-+	if (ret)
-+		goto done;
-+
-+	puts("Writing to SPI flash...");
-+	ret = spi_flash_write(env_flash, CONFIG_ENV_OFFSET,
-+		CONFIG_ENV_SIZE, &env_new);
-+	if (ret)
-+		goto done;
-+
-+	if (CONFIG_ENV_SECT_SIZE > CONFIG_ENV_SIZE) {
-+		ret = spi_flash_write(env_flash, saved_offset,
-+			saved_size, saved_buffer);
-+		if (ret)
-+			goto done;
-+	}
-+
-+	ret = 0;
-+	puts("done\n");
-+
-+ done:
-+	if (saved_buffer)
-+		free(saved_buffer);
-+
-+	return ret;
-+}
-+
-+int saveenv (void)
-+{
-+	int ret=0;
-+	switch (iwg15m_boot_device()) {
-+		case SATA_BOOT_DEV:
-+			ret = saveenv_sata ();
-+			break;
-+		case SPI_BOOT_DEV:
-+			ret = saveenv_sf ();
-+			break;
-+		case SD_BOOT_DEV:
-+		case MMC_BOOT_DEV:
-+			ret = saveenv_mmc ();
-+			break;
-+	}
-+	return ret;
-+}
-+#endif /* CONFIG_CMD_SAVEENV */
-+
-+static inline int read_env_mmc(struct mmc *mmc, unsigned long size,
-+		unsigned long offset, const void *buffer)
-+{
-+	uint blk_start, blk_cnt, n;
-+        int mmc_env_devno = get_mmc_env_devno();
-+
-+	blk_start = ALIGN(offset, mmc->read_bl_len) / mmc->read_bl_len;
-+	blk_cnt   = ALIGN(size, mmc->read_bl_len) / mmc->read_bl_len;
-+
-+	n = mmc->block_dev.block_read(mmc_env_devno, blk_start,
-+			blk_cnt, (uchar *)buffer);
-+
-+	return (n == blk_cnt) ? 0 : -1;
-+}
-+
-+inline int read_env_sata(struct blk_desc *sata, unsigned long size,
-+		unsigned long offset, const void *buffer)
-+{
-+	uint blk_start, blk_cnt, n;
-+
-+	blk_start = ALIGN(offset, sata->blksz) / sata->blksz;
-+	blk_cnt   = ALIGN(size, sata->blksz) / sata->blksz;
-+
-+	n = sata->block_read(sata_curr_device, blk_start,
-+			blk_cnt, (uchar *)buffer);
-+
-+	return (n == blk_cnt) ? 0 : -1;
-+}
-+
-+void env_relocate_spec_mmc(void)
-+{
-+#if !defined(ENV_IS_EMBEDDED)
-+	ALLOC_CACHE_ALIGN_BUFFER(char, buf, CONFIG_ENV_SIZE);
-+	int mmc_env_devno = get_mmc_env_devno();
-+	struct mmc *mmc = find_mmc_device(mmc_env_devno);
-+	u32 offset;
-+	int ret;
-+
-+	if (init_mmc_for_env(mmc)) {
-+		ret = 1;
-+		goto err;
-+	}
-+
-+	if (mmc_get_env_addr(mmc, &offset)) {
-+		ret = 1;
-+		goto fini;
-+	}
-+
-+	if (read_env_mmc(mmc, CONFIG_ENV_SIZE, offset, buf)) {
-+		ret = 1;
-+		goto fini;
-+	}
-+
-+	env_import(buf, 1);
-+	ret = 0;
-+
-+fini:
-+	fini_mmc_for_env(mmc);
-+err:
-+	if (ret)
-+		set_default_env(NULL);
-+#endif
-+}
-+
-+void env_relocate_spec_sata(void)
-+{
-+#if !defined(ENV_IS_EMBEDDED)
-+	struct blk_desc *sata = NULL;
-+	char buf[CONFIG_ENV_SIZE];
-+	int ret;
-+
-+	if (sata_curr_device == -1) {
-+		if (sata_initialize())
-+			return;
-+		sata_curr_device = IWCONFIG_SATA_ENV_DEV;
-+	}
-+
-+	if (sata_curr_device >= CONFIG_SYS_SATA_MAX_DEVICE) {
-+		printf("Unknown SATA(%d) device for environment!\n",
-+			sata_curr_device);
-+		return;
-+	}
-+	sata = sata_get_dev(sata_curr_device);
-+
-+	if (read_env_sata(sata, CONFIG_ENV_SIZE, CONFIG_ENV_OFFSET, buf))
-+		return use_default();
-+
-+	ret = env_import(buf, 1);
-+	if (ret)
-+		gd->env_valid = 1;
-+
-+#endif
-+}
-+
-+void env_relocate_spec_sf(void)
-+{
-+	char buf[CONFIG_ENV_SIZE];
-+	int ret;
-+
-+	env_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
-+			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
-+	if (!env_flash) {
-+		set_default_env("!spi_flash_probe() failed");
-+		return;
-+	}
-+
-+	ret = spi_flash_read(env_flash,
-+		CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE, buf);
-+	if (ret) {
-+		set_default_env("!spi_flash_read() failed");
-+		goto out;
-+	}
-+
-+	ret = env_import(buf, 1);
-+	if (ret)
-+		gd->env_valid = 1;
-+out:
-+	spi_flash_free(env_flash);
-+	env_flash = NULL;
-+}
-+
-+void env_relocate_spec(void)
-+{
-+	switch (iwg15m_boot_device()) {
-+		case SATA_BOOT_DEV:
-+			strcpy (env_name_spec, "SATA");
-+			env_relocate_spec_sata ();
-+			break;
-+		case SPI_BOOT_DEV:
-+			strcpy (env_name_spec, "SPI");
-+			env_relocate_spec_sf ();
-+			break;
-+		case SD_BOOT_DEV:
-+		case MMC_BOOT_DEV:
-+			strcpy (env_name_spec, "MMC");
-+			env_relocate_spec_mmc ();
-+			break;
-+	}
-+}
-+
-+#if !defined(ENV_IS_EMBEDDED)
-+static void use_default()
-+{
-+	puts ("*** Warning - bad CRC or MMC, using default environment\n\n");
-+	set_default_env(NULL);
-+}
-+#endif
-+
-+U_BOOT_ENV_LOCATION(iwg15) = {
-+	.location	= ENVL_IWG15,
-+	.init		= env_iwg15_init,
-+	ENV_NAME("iwg15")
-+};
-diff --git a/include/common.h b/include/common.h
-index 0554752abfc..d5d43b25a2c 100644
---- a/include/common.h
-+++ b/include/common.h
-@@ -742,4 +742,11 @@ int do_raw_read(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
- # include <environment.h>
- #endif
- 
-+/*Boot Device Defining for Auto BootArguments Saving*/
-+#define UNKNOWN_BOOT_DEV       0
-+#define SPI_BOOT_DEV           1
-+#define MMC_BOOT_DEV           2
-+#define SD_BOOT_DEV            3
-+#define SATA_BOOT_DEV          4
-+
- #endif	/* __COMMON_H_ */
 diff --git a/include/configs/mx6_iwg15_common.h b/include/configs/mx6_iwg15_common.h
 new file mode 100644
-index 00000000000..37e7203401e
+index 00000000000..a144f787be9
 --- /dev/null
 +++ b/include/configs/mx6_iwg15_common.h
-@@ -0,0 +1,324 @@
+@@ -0,0 +1,296 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -7012,6 +6189,8 @@ index 00000000000..37e7203401e
 +#ifndef __MX6_IWG15_COMMON_CONFIG_H
 +#define __MX6_IWG15_COMMON_CONFIG_H
 +
++#include "mx6_common.h"
++
 +#define IWCONFIG_MX6_IWG15
 +#define IWCONFIG_CMD_IMX_DOWNLOAD_MODE
 +
@@ -7022,7 +6201,7 @@ index 00000000000..37e7203401e
 +
 +#ifdef CONFIG_SECURE_BOOT
 +#ifndef CONFIG_CSF_SIZE
-+#define CONFIG_CSF_SIZE 0x4000
++#define CONFIG_CSF_SIZE SZ_16K
 +#endif
 +#endif
 +
@@ -7053,19 +6232,19 @@ index 00000000000..37e7203401e
 +
 +/* allow to overwrite serial and ethaddr */
 +#define CONFIG_ENV_OVERWRITE
-+#define CONFIG_CONS_INDEX              1
-+#define CONFIG_BAUDRATE                        115200
++#define CONFIG_CONS_INDEX               1
++#define CONFIG_BAUDRATE                 115200
 +
 +#undef CONFIG_CMD_SETEXPR
 +#undef CONFIG_CMD_IMLS
 +
 +
-+#define CONFIG_LOADADDR                        0x12000000
-+#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
++#define CONFIG_LOADADDR                 0x12000000
++#define CONFIG_SYS_MMC_IMG_LOAD_PART    1
 +
 +#ifdef CONFIG_MFG
 +#define CONFIG_MFG_ENV_SETTINGS \
-+       "mfgtool_args=setenv bootargs console=" IWCONFIG_CONSOLE_DEV ",115200 " \
++       "mfgtool_args=setenv bootargs console=" CONSOLE_DEV ",115200 " \
 +               "rdinit=/linuxrc " \
 +               "g_mass_storage.stall=0 g_mass_storage.removable=1 " \
 +               "g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
@@ -7088,17 +6267,18 @@ index 00000000000..37e7203401e
 +#else
 +
 +#define COMMON_CONFIG_EXTRA_ENV_SETTINGS \
-+        "fdt_file=/boot/" CONFIG_DEFAULT_FDT_FILE "\0" \
++        "fdt_file=" CONFIG_DEFAULT_FDT_FILE "\0" \
 +        "uboot_ldo_bypass=1\0" \
 +        "fdtforce=0\0" \
 +        "fdt_check=if test ${fdtforce} = \"0\"; then dynamicfdt;fi;\0" \
 +        "fdt_addr=0x18000000\0" \
 +        "fdt_high=0xffffffff\0"   \
 +        "ethaddr=00:01:02:03:04:05\0" \
-+        "kernel=/boot/zImage\0" \
-+        "mmcbootpart=1\0" \
-+        "mmcrootpart=1\0" \
-+        "bootargs_base=console="IWCONFIG_CONSOLE_DEV",115200n8\0" \
++        "kernel=zImage\0" \
++        "bootpart=1\0" \
++        "rootpart=1\0" \
++        "bootpath=/boot/\0" \
++        "bootargs_base=console="CONSOLE_DEV",115200n8\0" \
 +        "bootcmd_net=dhcp;run fdt_check;tftpboot ${loadaddr} ${serverip}:${kernel};tftpboot ${fdt_addr} ${serverip}:${fdt_file};" \
 +                "run bootargs_net;bootz ${loadaddr} - ${fdt_addr}\0" \
 +        "bootargs_net=setenv bootargs ${bootargs_base} " \
@@ -7108,18 +6288,18 @@ index 00000000000..37e7203401e
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +                "bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk1p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/mmcblk1p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 1;" \
-+                        "ext2load mmc 1:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 1:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load mmc 1:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 1:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +               "bootcmd=run bootcmd_mmc\0" \
 +        "\0"   
 +#else                
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +		"bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk2p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/mmcblk2p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 2;" \
-+                        "ext2load mmc 2:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 2:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load mmc 2:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 2:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +               "bootcmd=run bootcmd_mmc\0" \
 +	"\0"
 +#endif 
@@ -7127,9 +6307,9 @@ index 00000000000..37e7203401e
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_SATA \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +                "bootargs_sata=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/sda${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/sda${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_sata=run bootargs_sata;run fdt_check;sata init;" \
-+                        "ext2load sata 0:${mmcbootpart} ${loadaddr} ${kernel};ext2load sata 0:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load sata 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load sata 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_sata\0" \
 +        "\0" 
 +
@@ -7137,18 +6317,18 @@ index 00000000000..37e7203401e
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_MSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +                "bootargs_msd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk0p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/mmcblk0p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_msd=run bootargs_msd;run fdt_check;mmc dev 0;" \
-+                        "ext2load mmc 0:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 0:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load mmc 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_msd\0" \
 +        "\0"
 +#else
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_MSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +                "bootargs_msd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk1p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/mmcblk1p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_msd=run bootargs_msd;run fdt_check;mmc dev 1;" \
-+                        "ext2load mmc 1:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 1:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load mmc 1:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 1:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_msd\0" \
 +        "\0"
 +#endif
@@ -7156,95 +6336,65 @@ index 00000000000..37e7203401e
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_SSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
 +                "bootargs_ssd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk0p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/mmcblk0p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_ssd=run bootargs_ssd;run fdt_check;mmc dev 0;" \
-+                        "ext2load mmc 0:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 0:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
++                        "ext2load mmc 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_ssd\0" \
 +        "\0" 
 +
-+#ifdef CONFIG_TARGET_MX6_IWG15M_SM
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_EMMC \
-+                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
-+                "bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk1p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
-+                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 1;" \
-+                        "ext2load mmc 1:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 1:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
-+                "bootcmd=run bootcmd_mmc\0" \
++                CONFIG_EXTRA_ENV_SETTINGS \
 +        "\0"
-+
-+#else
-+#define IWCONFIG_EXTRA_ENV_SETTINGS_EMMC \
-+                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
-+                "bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk2p${mmcrootpart} rootwait rw ${lcd} ${hdmi}\0" \
-+                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 2;" \
-+                        "ext2load mmc 2:${mmcbootpart} ${loadaddr} ${kernel};ext2load mmc 2:${mmcbootpart} ${fdt_addr} ${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
-+                "bootcmd=run bootcmd_mmc\0" \
-+        "\0"
-+
-+#endif
 +
 +#endif
 +
 +#define CONFIG_ARP_TIMEOUT     200UL
 +
 +/* Miscellaneous configurable options */
-+#define IWCONFIG_SYS_HUSH_PARSER
-+#define CONFIG_SYS_PROMPT_HUSH_PS2     "> "
++#define CONFIG_SYS_PROMPT_HUSH_PS2      "> "
 +
 +/* Print Buffer Size */
 +#define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
 +#define CONFIG_SYS_BARGSIZE CONFIG_SYS_CBSIZE
 +
-+#define CONFIG_SYS_MEMTEST_START       0x10000000
-+#define CONFIG_SYS_MEMTEST_END         0x10010000
-+#define CONFIG_SYS_MEMTEST_SCRATCH     0x10800000
++#define CONFIG_SYS_MEMTEST_START        0x10000000
++#define CONFIG_SYS_MEMTEST_END          0x10010000
++#define CONFIG_SYS_MEMTEST_SCRATCH      0x10800000
 +
-+#define CONFIG_SYS_LOAD_ADDR           CONFIG_LOADADDR
-+#define CONFIG_SYS_HZ                  1000
++#define CONFIG_SYS_LOAD_ADDR            CONFIG_LOADADDR
++#define CONFIG_SYS_HZ                   1000
 +
-+#define IWCONFIG_STACKSIZE               (128 * 1024)
++#define IWCONFIG_STACKSIZE              SZ_128K
 +
 +/* Physical Memory Map */
-+#define CONFIG_NR_DRAM_BANKS           1
-+#define PHYS_SDRAM                     MMDC0_ARB_BASE_ADDR
++#define CONFIG_NR_DRAM_BANKS            1
++#define PHYS_SDRAM                      MMDC0_ARB_BASE_ADDR
 +
-+#define PHYS_SDRAM_SIZE                (1u * 1024 * 1024 * 1024)
-+#define PHYS_SDRAM_SIZE_512MB          (512 * 1024 * 1024)
-+#define CONFIG_SYS_SDRAM_BASE          PHYS_SDRAM
-+#define CONFIG_SYS_INIT_RAM_ADDR       IRAM_BASE_ADDR
-+#define CONFIG_SYS_INIT_RAM_SIZE       IRAM_SIZE
++#define PHYS_SDRAM_SIZE                 (1u * SZ_1G)
++#define PHYS_SDRAM_SIZE_512MB           SZ_512M
++#define CONFIG_SYS_SDRAM_BASE           PHYS_SDRAM
++#define CONFIG_SYS_INIT_RAM_ADDR        IRAM_BASE_ADDR
++#define CONFIG_SYS_INIT_RAM_SIZE        IRAM_SIZE
 +
 +#define CONFIG_SYS_INIT_SP_OFFSET \
 +	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
 +#define CONFIG_SYS_INIT_SP_ADDR \
 +	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
 +
-+/* FLASH and environment organization */
-+#define IWCONFIG_SYS_NO_FLASH
-+
-+#define IWCONFIG_FSL_ENV_IN_DYNAMIC
-+#define CONFIG_ENV_SIZE			(8 * 1024)
-+#define CONFIG_ENV_SECT_SIZE            (64 * 1024)
-+#ifndef CONFIG_MFG 
-+#if defined(IWCONFIG_FSL_ENV_IN_DYNAMIC)
-+        #define CONFIG_ENV_IS_IN_DYNAMIC        1
-+        #define IWCONFIG_SATA_ENV_DEV             0
-+        #define CONFIG_ENV_OFFSET               (768 * 1024)
-+        #define CONFIG_ENV_SECT_SIZE            (64 * 1024)
-+        #define IWCONFIG_SYS_USE_SPINOR
-+        #define CONFIG_ENV_SPI_BUS              CONFIG_SF_DEFAULT_BUS
-+        #define CONFIG_ENV_SPI_CS               CONFIG_SF_DEFAULT_CS
-+        #define CONFIG_ENV_SPI_MODE             CONFIG_SF_DEFAULT_MODE
-+        #define CONFIG_ENV_SPI_MAX_HZ           CONFIG_SF_DEFAULT_SPEED
-+        #define CONFIG_SYS_DCACHE_OFF
-+#else
-+        #define CONFIG_ENV_IS_NOWHERE   1
-+#endif
-+#endif
-+
-+#ifndef IWCONFIG_SYS_NOSMP
-+#define IWCONFIG_SYS_NOSMP
++/* Environment organization */
++#define CONFIG_ENV_SIZE                 SZ_8K
++#define CONFIG_ENV_SECT_SIZE            SZ_64K
++#ifndef CONFIG_MFG
++#define CONFIG_SYS_SATA_ENV_DEV         0
++#define CONFIG_ENV_OFFSET               (768 * SZ_1K)
++#define CONFIG_SYS_REDUNDAND_ENVIRONMENT
++#define CONFIG_ENV_OFFSET_REDUND        CONFIG_ENV_OFFSET + CONFIG_ENV_SECT_SIZE
++#define IWCONFIG_SYS_USE_SPINOR
++#define CONFIG_ENV_SPI_BUS              CONFIG_SF_DEFAULT_BUS
++#define CONFIG_ENV_SPI_CS               CONFIG_SF_DEFAULT_CS
++#define CONFIG_ENV_SPI_MODE             CONFIG_SF_DEFAULT_MODE
++#define CONFIG_ENV_SPI_MAX_HZ           CONFIG_SF_DEFAULT_SPEED
++#define CONFIG_SYS_DCACHE_OFF
 +#endif
 +
 +#ifdef CONFIG_CMD_SATA
@@ -7269,7 +6419,6 @@ index 00000000000..37e7203401e
 +
 +/* I2C Configs */
 +#define CONFIG_SYS_I2C
-+#define IWCONFIG_HARD_I2C         1
 +#define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 +#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
 +#define CONFIG_SYS_I2C_MXC_I2C3		/* enable I2C bus 3 */
@@ -7309,7 +6458,7 @@ index 00000000000..37e7203401e
 +#endif                         /* __MX6_IWG15M_COMMON_CONFIG_H */
 diff --git a/include/configs/mx6_iwg15m_sm.h b/include/configs/mx6_iwg15m_sm.h
 new file mode 100644
-index 00000000000..d628c704acf
+index 00000000000..8356852e389
 --- /dev/null
 +++ b/include/configs/mx6_iwg15m_sm.h
 @@ -0,0 +1,106 @@
@@ -7342,7 +6491,7 @@ index 00000000000..d628c704acf
 +#endif
 +
 +#define CONFIG_MXC_UART_BASE	UART2_BASE
-+#define IWCONFIG_CONSOLE_DEV		"ttymxc1"
++#define CONSOLE_DEV		"ttymxc1"
 +
 +#include "mx6_iwg15_common.h"
 +#include "mx6_common.h"
@@ -7421,7 +6570,7 @@ index 00000000000..d628c704acf
 +#endif                         /* __MX6_IWG15M_SM_CONFIG_H */
 diff --git a/include/configs/mx6_iwg15m_sm_mfg.h b/include/configs/mx6_iwg15m_sm_mfg.h
 new file mode 100644
-index 00000000000..4bab186c9d0
+index 00000000000..a18c75d5192
 --- /dev/null
 +++ b/include/configs/mx6_iwg15m_sm_mfg.h
 @@ -0,0 +1,87 @@
@@ -7454,7 +6603,7 @@ index 00000000000..4bab186c9d0
 +#define __MX6_IWG15M_CONFIG_H
 +
 +#define CONFIG_MXC_UART_BASE	UART2_BASE
-+#define IWCONFIG_CONSOLE_DEV		"ttymxc1"
++#define CONSOLE_DEV		"ttymxc1"
 +#define CONFIG_MFG
 +
 +#include "mx6_iwg15_common.h"
@@ -7512,686 +6661,6 @@ index 00000000000..4bab186c9d0
 +#define CONFIG_BOOTCOMMAND      "bootm 0x12000000 0x12C00000 0x18000000"
 +
 +#endif                         /* __MX6_IWG15M_CONFIG_H */
-diff --git a/include/env_default.h b/include/env_default.h
-index b574345af25..305dc7edefd 100644
---- a/include/env_default.h
-+++ b/include/env_default.h
-@@ -10,6 +10,657 @@
- 
- #include <env_callback.h>
- 
-+#if defined(IWCONFIG_MX6_IWG15) && !defined(CONFIG_MFG)
-+#ifdef DEFAULT_ENV_INSTANCE_EMBEDDED
-+env_t environment __PPCENV__ = {
-+	ENV_CRC,	/* CRC Sum */
-+#ifdef CONFIG_SYS_REDUNDAND_ENVIRONMENT
-+	1,		/* Flags: valid */
-+#endif
-+	{
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	CONFIG_EXTRA_ENV_SETTINGS
-+#endif
-+	"\0"
-+	}
-+};
-+
-+#else
-+
-+#if defined(DEFAULT_ENV_INSTANCE_STATIC)
-+static char default_environment_sata[] = {
-+#else
-+const uchar default_environment_sata[] = {
-+#endif
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	IWCONFIG_EXTRA_ENV_SETTINGS_SATA
-+#endif
-+	"\0"
-+};
-+
-+#if defined(DEFAULT_ENV_INSTANCE_STATIC)
-+static char default_environment_msd[] = {
-+#else
-+const uchar default_environment_msd[] = {
-+#endif
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	IWCONFIG_EXTRA_ENV_SETTINGS_MSD
-+#endif
-+	"\0"
-+};
-+
-+#if defined(DEFAULT_ENV_INSTANCE_STATIC)
-+static char default_environment_ssd[] = {
-+#else
-+const uchar default_environment_ssd[] = {
-+#endif
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	IWCONFIG_EXTRA_ENV_SETTINGS_SSD
-+#endif
-+	"\0"
-+};
-+
-+#if defined(DEFAULT_ENV_INSTANCE_STATIC)
-+static char default_environment_emmc[] = {
-+#else
-+const uchar default_environment_emmc[] = {
-+#endif
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	IWCONFIG_EXTRA_ENV_SETTINGS_EMMC
-+#endif
-+	"\0"
-+};
-+
-+#if defined(DEFAULT_ENV_INSTANCE_STATIC)
-+static char default_environment[] = {
-+#else
-+const uchar default_environment[] = {
-+#endif
-+#ifdef	CONFIG_ENV_CALLBACK_LIST_DEFAULT
-+	ENV_CALLBACK_VAR "=" CONFIG_ENV_CALLBACK_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_ENV_FLAGS_LIST_DEFAULT
-+	ENV_FLAGS_VAR "=" CONFIG_ENV_FLAGS_LIST_DEFAULT "\0"
-+#endif
-+#ifdef	CONFIG_BOOTARGS
-+	"bootargs="	CONFIG_BOOTARGS			"\0"
-+#endif
-+#ifdef	CONFIG_BOOTCOMMAND
-+	"bootcmd="	CONFIG_BOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_RAMBOOTCOMMAND
-+	"ramboot="	CONFIG_RAMBOOTCOMMAND		"\0"
-+#endif
-+#ifdef	CONFIG_NFSBOOTCOMMAND
-+	"nfsboot="	CONFIG_NFSBOOTCOMMAND		"\0"
-+#endif
-+#if defined(CONFIG_BOOTDELAY) && (CONFIG_BOOTDELAY >= 0)
-+	"bootdelay="	__stringify(CONFIG_BOOTDELAY)	"\0"
-+#endif
-+#if defined(CONFIG_BAUDRATE) && (CONFIG_BAUDRATE >= 0)
-+	"baudrate="	__stringify(CONFIG_BAUDRATE)	"\0"
-+#endif
-+#ifdef	CONFIG_LOADS_ECHO
-+	"loads_echo="	__stringify(CONFIG_LOADS_ECHO)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHADDR
-+	"ethaddr="	__stringify(CONFIG_ETHADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH1ADDR
-+	"eth1addr="	__stringify(CONFIG_ETH1ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH2ADDR
-+	"eth2addr="	__stringify(CONFIG_ETH2ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH3ADDR
-+	"eth3addr="	__stringify(CONFIG_ETH3ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH4ADDR
-+	"eth4addr="	__stringify(CONFIG_ETH4ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETH5ADDR
-+	"eth5addr="	__stringify(CONFIG_ETH5ADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_ETHPRIME
-+	"ethprime="	CONFIG_ETHPRIME			"\0"
-+#endif
-+#ifdef	CONFIG_IPADDR
-+	"ipaddr="	__stringify(CONFIG_IPADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_SERVERIP
-+	"serverip="	__stringify(CONFIG_SERVERIP)	"\0"
-+#endif
-+#ifdef	CONFIG_SYS_AUTOLOAD
-+	"autoload="	CONFIG_SYS_AUTOLOAD		"\0"
-+#endif
-+#ifdef	CONFIG_PREBOOT
-+	"preboot="	CONFIG_PREBOOT			"\0"
-+#endif
-+#ifdef	CONFIG_ROOTPATH
-+	"rootpath="	CONFIG_ROOTPATH			"\0"
-+#endif
-+#ifdef	CONFIG_GATEWAYIP
-+	"gatewayip="	__stringify(CONFIG_GATEWAYIP)	"\0"
-+#endif
-+#ifdef	CONFIG_NETMASK
-+	"netmask="	__stringify(CONFIG_NETMASK)	"\0"
-+#endif
-+#ifdef	CONFIG_HOSTNAME
-+	"hostname="	__stringify(CONFIG_HOSTNAME)	"\0"
-+#endif
-+#ifdef	CONFIG_BOOTFILE
-+	"bootfile="	CONFIG_BOOTFILE			"\0"
-+#endif
-+#ifdef	CONFIG_LOADADDR
-+	"loadaddr="	__stringify(CONFIG_LOADADDR)	"\0"
-+#endif
-+#ifdef	CONFIG_CLOCKS_IN_MHZ
-+	"clocks_in_mhz=1\0"
-+#endif
-+#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-+	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
-+#endif
-+#ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
-+	"arch="		CONFIG_SYS_ARCH			"\0"
-+	"cpu="		CONFIG_SYS_CPU			"\0"
-+	"board="	CONFIG_SYS_BOARD		"\0"
-+	"board_name="	CONFIG_SYS_BOARD		"\0"
-+#ifdef CONFIG_SYS_VENDOR
-+	"vendor="	CONFIG_SYS_VENDOR		"\0"
-+#endif
-+#ifdef CONFIG_SYS_SOC
-+	"soc="		CONFIG_SYS_SOC			"\0"
-+#endif
-+#endif
-+#ifdef	CONFIG_EXTRA_ENV_SETTINGS
-+	CONFIG_EXTRA_ENV_SETTINGS
-+#endif
-+	"\0"
-+};
-+#endif
-+
-+#else
-+
- #ifdef DEFAULT_ENV_INSTANCE_EMBEDDED
- env_t environment __UBOOT_ENV_SECTION__ = {
- 	ENV_CRC,	/* CRC Sum */
-@@ -112,3 +763,5 @@ const uchar default_environment[] = {
- 	}
- #endif
- };
-+
-+#endif
-diff --git a/include/environment.h b/include/environment.h
-index ec12af55c19..b8e4cd4f09a 100644
---- a/include/environment.h
-+++ b/include/environment.h
-@@ -202,6 +202,7 @@ enum env_location {
- 	ENVL_SPI_FLASH,
- 	ENVL_UBI,
- 	ENVL_NOWHERE,
-+	ENVL_IWG15,
- 
- 	ENVL_COUNT,
- };
 diff --git a/include/micrel.h b/include/micrel.h
 index 3e6b5312d85..bf4d959cae0 100644
 --- a/include/micrel.h
@@ -8214,17 +6683,3 @@ index 3e6b5312d85..bf4d959cae0 100644
  #define MII_KSZ9031_EXT_RGMII_CTRL_SIG_SKEW	0x4
  #define MII_KSZ9031_EXT_RGMII_RX_DATA_SKEW	0x5
  #define MII_KSZ9031_EXT_RGMII_TX_DATA_SKEW	0x6
-diff --git a/include/mmc.h b/include/mmc.h
-index 40ed3bc01ae..1d2ac0533c5 100644
---- a/include/mmc.h
-+++ b/include/mmc.h
-@@ -838,7 +838,9 @@ struct mmc *mmc_spi_init(uint bus, uint cs, uint speed, uint mode);
- void board_mmc_power_init(void);
- int board_mmc_init(bd_t *bis);
- int cpu_mmc_init(bd_t *bis);
-+#ifndef IWCONFIG_MX6_IWG15
- int mmc_get_env_addr(struct mmc *mmc, int copy, u32 *env_addr);
-+#endif
- int mmc_get_env_dev(void);
- int mmc_map_to_kernel_blk(int dev_no);
- 
