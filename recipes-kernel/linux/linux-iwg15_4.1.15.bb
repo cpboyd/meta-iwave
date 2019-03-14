@@ -15,6 +15,7 @@ KERNEL_SRC ?= "git://source.codeaurora.org/external/imx/linux-imx.git;protocol=h
 SRCREV = "30278abfe0977b1d2f065271ce1ea23c0e2d1b6e"
 SRC_URI = "${KERNEL_SRC};branch=${SRCBRANCH} \
 	    file://0001-iwave-linux_${PV}.patch \
+	    file://0002-specify-arm-arch-for-modules.patch \
 "
 
 DEFAULT_PREFERENCE = "1"
