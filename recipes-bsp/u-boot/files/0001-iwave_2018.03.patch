@@ -6156,10 +6156,10 @@ index d137bfdca0b..a514558bda4 100644
  		       cpu_tmp, priv->maxc);
 diff --git a/include/configs/mx6_iwg15_common.h b/include/configs/mx6_iwg15_common.h
 new file mode 100644
-index 00000000000..a144f787be9
+index 00000000000..ddc7410d0ee
 --- /dev/null
 +++ b/include/configs/mx6_iwg15_common.h
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,302 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -6287,8 +6287,9 @@ index 00000000000..a144f787be9
 +#ifdef CONFIG_TARGET_MX6_IWG15M_SM
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
++                "rootdev=mmcblk3\0" \
 +                "bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk1p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 1;" \
 +                        "ext2load mmc 1:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 1:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +               "bootcmd=run bootcmd_mmc\0" \
@@ -6296,8 +6297,9 @@ index 00000000000..a144f787be9
 +#else                
 +#define CONFIG_EXTRA_ENV_SETTINGS \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
-+		"bootargs_mmc=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk2p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                "rootdev=mmcblk2\0" \
++                "bootargs_mmc=setenv bootargs ${bootargs_base} " \
++                        "root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev 2;" \
 +                        "ext2load mmc 2:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 2:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +               "bootcmd=run bootcmd_mmc\0" \
@@ -6306,8 +6308,9 @@ index 00000000000..a144f787be9
 +
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_SATA \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
++                "rootdev=sda\0" \
 +                "bootargs_sata=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/sda${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/${rootdev}${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_sata=run bootargs_sata;run fdt_check;sata init;" \
 +                        "ext2load sata 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load sata 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_sata\0" \
@@ -6316,8 +6319,9 @@ index 00000000000..a144f787be9
 +#ifdef CONFIG_TARGET_MX6_IWG15M_SM
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_MSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
++                "rootdev=mmcblk0\0" \
 +                "bootargs_msd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk0p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_msd=run bootargs_msd;run fdt_check;mmc dev 0;" \
 +                        "ext2load mmc 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_msd\0" \
@@ -6325,8 +6329,9 @@ index 00000000000..a144f787be9
 +#else
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_MSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
++                "rootdev=mmcblk1\0" \
 +                "bootargs_msd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk1p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_msd=run bootargs_msd;run fdt_check;mmc dev 1;" \
 +                        "ext2load mmc 1:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 1:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_msd\0" \
@@ -6335,8 +6340,9 @@ index 00000000000..a144f787be9
 +
 +#define IWCONFIG_EXTRA_ENV_SETTINGS_SSD \
 +                COMMON_CONFIG_EXTRA_ENV_SETTINGS \
++                "rootdev=mmcblk0\0" \
 +                "bootargs_ssd=setenv bootargs ${bootargs_base} " \
-+                        "root=/dev/mmcblk0p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
++                        "root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 +                "bootcmd_ssd=run bootargs_ssd;run fdt_check;mmc dev 0;" \
 +                        "ext2load mmc 0:${bootpart} ${loadaddr} ${bootpath}${kernel};ext2load mmc 0:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};bootz ${loadaddr} - ${fdt_addr}\0" \
 +                "bootcmd=run bootcmd_ssd\0" \

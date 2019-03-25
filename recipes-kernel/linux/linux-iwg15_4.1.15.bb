@@ -14,28 +14,18 @@ LOCALVERSION = "-${SRCBRANCH}"
 KERNEL_SRC ?= "git://source.codeaurora.org/external/imx/linux-imx.git;protocol=https"
 SRCREV = "30278abfe0977b1d2f065271ce1ea23c0e2d1b6e"
 SRC_URI = "${KERNEL_SRC};branch=${SRCBRANCH} \
-	    file://0001-iwave-linux_${PV}.patch \
-	    file://0002-specify-arm-arch-for-modules.patch \
+        file://0001-custom-dts.patch \
+        file://0001-iwave-linux_${PV}.patch \
+        file://0001-mmc-block-Use-the-mmc-host-device-index.patch \
+        file://0001-pwm-imx-Add-polarity-inversion-support.patch \
+        file://0002-specify-arm-arch-for-modules.patch \
+        file://defconfig \
 "
 
 DEFAULT_PREFERENCE = "1"
 
-KERNEL_DEFCONFIG_imx6qdl-iwg15-sm = "${S}/arch/arm/configs/iw_rainbowg15m_sm_defconfig"
-
 # Pull in the devicetree files into the rootfs
 RDEPENDS_${KERNEL_PACKAGE_NAME}-base += "kernel-devicetree"
-
-DO_CONFIG_V7_COPY = "no"
-DO_CONFIG_V7_COPY_mx6 = "yes"
-DO_CONFIG_V7_COPY_mx6ul = "yes"
-DO_CONFIG_V7_COPY_mx7 = "yes"
-
-do_copy_defconfig () {
-   # copy latest defconfig for iw_rainbowg15_defconfig to use
-   cp ${KERNEL_DEFCONFIG} ${B}/.config
-   cp ${KERNEL_DEFCONFIG} ${B}/../defconfig
-}
-addtask copy_defconfig before do_preconfigure after do_patch
 
 COMPATIBLE_MACHINE = "(imx6qdl-iwg15-sm)"
 
