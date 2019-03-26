@@ -1,0 +1,725 @@
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index daed0e76a1e8..c584e9b0ef4d 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -496,7 +496,11 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
+ 	imx6qp-sabresd-hdcp.dtb \
+ 	imx6qp-sabresd-ldo.dtb \
+ 	imx6qp-sabresd-ldo-pcie-cert.dtb \
+-	imx6qp-zii-rdu2.dtb
++	imx6qp-zii-rdu2.dtb \
++	imx6qd-iwg15m-sm_ldoactive.dtb \
++	imx6dls-iwg15m-sm_ldoactive.dtb \
++	imx6qd-iwg15m-sm_ldobypass.dtb \
++	imx6dls-iwg15m-sm_ldobypass.dtb
+ dtb-$(CONFIG_SOC_IMX6SL) += \
+ 	imx6sl-evk.dtb \
+ 	imx6sl-evk-btwifi.dtb \
+diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
+index 7693cbdf1a9f..b1b5c129298c 100644
+--- a/arch/arm/mach-imx/Kconfig
++++ b/arch/arm/mach-imx/Kconfig
+@@ -524,6 +524,7 @@ config SOC_IMX6Q
+ 	select PINCTRL_IMX6Q
+ 	select SOC_IMX6
+ 	select MXC_MLB150
++	select ZONE_DMA
+ 
+ 	help
+ 	  This enables support for Freescale i.MX6 Quad processor.
+diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
+index 97af9d698908..6c023a2d40e2 100644
+--- a/arch/arm/mach-imx/Makefile
++++ b/arch/arm/mach-imx/Makefile
+@@ -93,7 +93,7 @@ obj-y += busfreq_lpddr2.o busfreq-imx.o busfreq_ddr3.o
+ AFLAGS_ddr3_freq_imx6.o :=-Wa,-march=armv7-a
+ AFLAGS_smp_wfe_imx6.o :=-Wa,-march=armv7-a
+ AFLAGS_lpddr2_freq_imx6q.o :=-Wa,-march=armv7-a
+-obj-$(CONFIG_SOC_IMX6Q) += mach-imx6q.o ddr3_freq_imx6.o smp_wfe_imx6.o \
++obj-$(CONFIG_SOC_IMX6Q) += mach-imx6q.o mach-imx6q-iwave.o ddr3_freq_imx6.o smp_wfe_imx6.o \
+ 			   lpddr2_freq_imx6q.o
+ AFLAGS_lpddr2_freq_imx6.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SOC_IMX6SL) += mach-imx6sl.o lpddr2_freq_imx6.o
+diff --git a/arch/arm/mach-imx/mach-imx6q-iwave.c b/arch/arm/mach-imx/mach-imx6q-iwave.c
+new file mode 100644
+index 000000000000..38eb1be65efa
+--- /dev/null
++++ b/arch/arm/mach-imx/mach-imx6q-iwave.c
+@@ -0,0 +1,222 @@
++/*
++ * iWave board init for GPIO
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio.h>
++#include <linux/gpio/consumer.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++#include <linux/of_gpio.h>
++#include <linux/of_platform.h>
++#include <linux/slab.h>
++#include "common.h"
++
++#define HDMI_CEC_GPIO	IMX_GPIO_NR(1, 21)
++#define COM_RESET_GPIO	IMX_GPIO_NR(1, 11)
++#define LCD_RESET_GPIO	IMX_GPIO_NR(7, 11)
++#define LCD_POWER_GPIO	IMX_GPIO_NR(4, 13)
++
++static struct platform_device *__init of_find_compatible_device(const char *compatible)
++{
++	struct device_node *np;
++	struct platform_device *pdev;
++
++	np = of_find_compatible_node(NULL, NULL, compatible);
++	if (!np) {
++		pr_warn("%s: failed to find %s node\n", __func__, compatible);
++		return NULL;
++	}
++
++	pdev = of_find_device_by_node(np);
++	of_node_put(np);
++	return pdev;
++}
++
++static void __init toggle_reset(struct device *dev, const char *con_id)
++{
++	struct gpio_desc *gpio;
++
++	gpio = gpiod_get(dev, con_id, GPIOD_OUT_LOW);
++	if (IS_ERR(gpio)) {
++		pr_warn("%s: failed to get %s gpio\n", __func__, con_id);
++		return;
++	}
++	
++	gpiod_set_raw_value(gpio, 1);
++	mdelay(100);
++	gpiod_set_raw_value(gpio, 0);
++	mdelay(100);
++	gpiod_set_raw_value(gpio, 1);
++	gpiod_put(gpio);
++}
++
++static void __init set_gpio_raw(struct device *dev, const char *con_id, int value)
++{
++	struct gpio_desc *gpio;
++
++	gpio = gpiod_get(dev, con_id, GPIOD_OUT_LOW);
++	if (IS_ERR(gpio)) {
++		pr_warn("%s: failed to get %s gpio\n", __func__, con_id);
++		return;
++	}
++
++	gpiod_set_raw_value(gpio, value);
++	gpiod_put(gpio);
++}
++
++static void __init set_gpio(struct device *dev, const char *con_id, int value)
++{
++	struct gpio_desc *gpio;
++
++	gpio = gpiod_get(dev, con_id, value ? GPIOD_OUT_HIGH : GPIOD_OUT_LOW);
++	if (IS_ERR(gpio)) {
++		pr_warn("%s: failed to get %s gpio\n", __func__, con_id);
++		return;
++	}
++
++	gpiod_put(gpio);
++}
++
++static void __init imx6_iwg15_hdmi_cec_init(void)
++{
++	struct platform_device *pdev;
++
++	pdev = of_find_compatible_device("fsl,imx6q-hdmi-cec");
++	if (!pdev) {
++		pr_warn("%s: failed to find device!\n", __func__);
++		return;
++	}
++
++	set_gpio_raw(&pdev->dev, "hdmi-cec-sm", 1);
++}
++
++static void __init sm_lvds_init(void)
++{
++	struct platform_device *pdev;
++
++	pdev = of_find_compatible_device("iwave,g15-sm_lcd_pwr");
++	if (!pdev) {
++		pr_warn("%s: failed to find device!\n", __func__);
++		return;
++	}
++
++	toggle_reset(&pdev->dev, "lcd-reset");
++	set_gpio_raw(&pdev->dev, "lcd-power", 1);
++}
++
++static int __init get_revision(struct platform_device *pdev, const char *con_id, int skip_bit)
++{
++	struct gpio_descs *gpios = NULL;
++	int i, val;
++	short revision = 0;
++
++	/* Fill GPIO pin array */
++	gpios = gpiod_get_array(&pdev->dev, con_id, GPIOD_IN);
++	if (IS_ERR(gpios) || gpios->ndescs <= 0) {
++		pr_warn("%s: %s gpios DT property empty / missing\n", __func__, con_id);
++		return -1;
++	}
++
++	/* Request as a input GPIO and read the value */
++	for (i = skip_bit; i < gpios->ndescs; i++) {
++
++		val = gpiod_get_value(gpios->desc[i]);
++		if (val < 0) {
++			pr_warn("%s: %s unable to get_value for gpio - %d: %d\n", __func__, con_id, i, val);
++			revision = -1;
++			goto put_array;
++		}
++
++		revision |= val << (i - skip_bit);
++
++	}
++
++put_array:
++	if (gpios != NULL && !IS_ERR(gpios)) {
++		gpiod_put_array(gpios);
++	}
++	return revision;
++}
++
++#define HW_OCOTP_CFGn(n)		(0x00000410 + (n) * 0x10)
++static int __init print_cpu_id(void)
++{
++	struct device_node *np;
++	unsigned int unique_id1, unique_id2;
++	void __iomem *base;
++
++	np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-ocotp");
++	if (!np) {
++		pr_warn("failed to find ocotp node\n");
++		return 0;
++	}
++
++	base = of_iomap(np, 0);
++	if (!base) {
++		pr_warn("failed to map ocotp\n");
++		goto put_node;
++	}
++
++	unique_id1 = readl_relaxed(base + HW_OCOTP_CFGn(0));
++	unique_id2 = readl_relaxed(base + HW_OCOTP_CFGn(1));
++
++	printk ("\tCPU Unique ID   : 0x%08x%08x \n", unique_id2, unique_id1);
++
++	iounmap(base);
++put_node:
++	of_node_put(np);
++	return 0;
++}
++
++static int __init iwave_g15_sm_com_init(void)
++{
++	struct platform_device *pdev;
++	int som_rev;
++
++	pdev = of_find_compatible_device("iwave,g15-sm-com");
++	if (!pdev) {
++		pr_warn("%s: failed to find device!\n", __func__);
++		return 0;
++	}
++
++	toggle_reset(&pdev->dev, "reset");
++
++	som_rev = get_revision(pdev, "som-rev", 0) + 1;
++	printk ("\tSOM version     : iW-PREPZ-AP-01-R%1x.%1x\n", som_rev,
++		/* skip one bit in case of 3.0 SOM */
++		get_revision(pdev, "bom-rev", (som_rev > 2) ? 1 : 0));
++
++	return 0;
++}
++
++static int __init imx6q_iwave_init(void)
++{
++	sm_lvds_init();
++	imx6_iwg15_hdmi_cec_init();
++
++	printk ("\n");
++	printk ("Board Info:\n");
++	iwave_g15_sm_com_init();
++	print_cpu_id();
++	printk ("\n");
++
++	return 0;
++}
++
++/*
++ * imx6q_iwave_init needs to have the gpio devices registered.
++ * device_initcall_sync is called after all the device_initcall
++ * (used by the gpio device) but before the late_initcall (used to
++ * register the platform_suspend_ops)
++ */
++device_initcall_sync(imx6q_iwave_init);
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 7b2462f7f598..98edb6b7bd10 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -11,17 +11,20 @@
+  * http://www.gnu.org/copyleft/gpl.html
+  */
+ 
++#include <linux/can/platform/flexcan.h>
+ #include <linux/clk.h>
+ #include <linux/clkdev.h>
+ #include <linux/cpu.h>
+ #include <linux/delay.h>
+ #include <linux/export.h>
++#include <linux/gpio.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/irqchip.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/of_gpio.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+ #include <linux/pm_opp.h>
+@@ -33,6 +36,9 @@
+ #include <linux/mfd/syscon.h>
+ #include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
+ #include <linux/of_net.h>
++#include <linux/fec.h>
++#include <linux/netdevice.h>
++#include <linux/libata.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/system_misc.h>
+@@ -41,6 +47,12 @@
+ #include "cpuidle.h"
+ #include "hardware.h"
+ 
++static struct flexcan_platform_data flexcan_pdata[2];
++static int flexcan0_en_gpio;
++static int flexcan1_en_gpio;
++
++static struct fec_platform_data fec_pdata;
++
+ /* For imx6q sabrelite board: set KSZ9021RN RGMII pad skew */
+ static int ksz9021rn_phy_fixup(struct phy_device *phydev)
+ {
+@@ -61,6 +73,32 @@ static int ksz9021rn_phy_fixup(struct phy_device *phydev)
+ 	return 0;
+ }
+ 
++static void imx6q_fec_sleep_enable(int enabled)
++{
++	struct regmap *gpr;
++
++	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
++	if (!IS_ERR(gpr)) {
++		if (enabled)
++			regmap_update_bits(gpr, IOMUXC_GPR13,
++					   IMX6Q_GPR13_ENET_STOP_REQ,
++					   IMX6Q_GPR13_ENET_STOP_REQ);
++		else
++			regmap_update_bits(gpr, IOMUXC_GPR13,
++					   IMX6Q_GPR13_ENET_STOP_REQ, 0);
++	} else
++		pr_err("failed to find fsl,imx6q-iomux-gpr regmap\n");
++}
++
++static void __init imx6q_enet_plt_init(void)
++{
++	struct device_node *np;
++
++	np = of_find_node_by_path("/soc/aips-bus@02100000/ethernet@02188000");
++	if (np && of_get_property(np, "fsl,magic-packet", NULL))
++		fec_pdata.sleep_mode_enable = imx6q_fec_sleep_enable;
++}
++
+ static void mmd_write_reg(struct phy_device *dev, int device, int reg, int val)
+ {
+ 	phy_write(dev, 0x0d, device);
+@@ -313,8 +351,59 @@ static inline void imx6q_enet_init(void)
+ 	imx6q_1588_init();
+ 	if (cpu_is_imx6q() && imx_get_soc_revision() >= IMX_CHIP_REVISION_2_0)
+ 		imx6q_enet_clk_sel();
++	imx6q_enet_plt_init();
++}
++
++static void imx6q_flexcan0_switch_auto(int enable)
++{
++	/* Active low enables the CAN tranceiver */
++	gpio_set_value_cansleep(flexcan0_en_gpio, !enable);
++}
++
++static void imx6q_flexcan1_switch_auto(int enable)
++{
++	/* Active low enables the CAN tranceiver */
++	gpio_set_value_cansleep(flexcan1_en_gpio, !enable);
+ }
+ 
++static struct flexcan_platform_data flexcan_pdata[2];
++static int __init imx6q_flexcan_fixup_auto(void)
++{
++	struct device_node *can0,*can1;
++
++	can0 = of_find_node_by_path("/soc/aips-bus@02000000/flexcan@02090000");
++	if (!can0)
++		return -ENODEV;
++
++	flexcan0_en_gpio = of_get_named_gpio(can0, "trx-en-gpio", 0);
++	if (gpio_is_valid(flexcan0_en_gpio) &&
++			!gpio_request_one(flexcan0_en_gpio, GPIOF_DIR_OUT, "flexcan0-trx-en")) {
++		flexcan_pdata[0].transceiver_switch = imx6q_flexcan0_switch_auto;
++	}
++
++	can1 = of_find_node_by_path("/soc/aips-bus@02000000/flexcan@02094000");
++	if (!can1)
++		return -ENODEV;
++
++	flexcan1_en_gpio = of_get_named_gpio(can1, "trx-en-gpio", 0);
++	if (gpio_is_valid(flexcan1_en_gpio) &&
++			!gpio_request_one(flexcan1_en_gpio, GPIOF_DIR_OUT, "flexcan1-trx-en")) {
++		flexcan_pdata[1].transceiver_switch = imx6q_flexcan1_switch_auto;
++		of_node_put(can1);
++	}
++
++	return 0;
++}
++
++/* Add auxdata to pass platform data */
++static const struct of_dev_auxdata imx6q_auxdata_lookup[] __initconst = {
++	OF_DEV_AUXDATA("fsl,imx6q-flexcan", 0x02090000, NULL, &flexcan_pdata[0]),
++	OF_DEV_AUXDATA("fsl,imx6q-flexcan", 0x02094000, NULL, &flexcan_pdata[1]),
++	OF_DEV_AUXDATA("fsl,imx6q-fec", 0x02188000, NULL, &fec_pdata),
++	{ /* sentinel */ }
++};
++
++extern void mxc_arch_reset_init_dt(void);
+ static void __init imx6q_init_machine(void)
+ {
+ 	struct device *parent;
+@@ -325,11 +414,13 @@ static void __init imx6q_init_machine(void)
+ 		imx_print_silicon_rev(cpu_is_imx6dl() ? "i.MX6DL" : "i.MX6Q",
+ 				imx_get_soc_revision());
+ 
++	mxc_arch_reset_init_dt();
++
+ 	parent = imx_soc_device_init();
+ 	if (parent == NULL)
+ 		pr_warn("failed to initialize soc device\n");
+ 
+-	of_platform_default_populate(NULL, NULL, parent);
++	of_platform_default_populate(NULL, imx6q_auxdata_lookup, parent);
+ 
+ 	imx6q_enet_init();
+ 	imx_anatop_init();
+@@ -442,6 +533,8 @@ static void __init imx6q_init_late(void)
+ 		imx6q_opp_init();
+ 		platform_device_register(&imx6q_cpufreq_pdev);
+ 	}
++
++	imx6q_flexcan_fixup_auto();
+ }
+ 
+ static void __init imx6q_map_io(void)
+@@ -463,6 +556,8 @@ static void __init imx6q_init_irq(void)
+ }
+ 
+ static const char * const imx6q_dt_compat[] __initconst = {
++	"iw,qd_iwg15m_sm",
++	"iw,dls_iwg15m_sm",
+ 	"fsl,imx6dl",
+ 	"fsl,imx6q",
+ 	"fsl,imx6qp",
+@@ -478,4 +573,11 @@ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
+ 	.init_machine	= imx6q_init_machine,
+ 	.init_late      = imx6q_init_late,
+ 	.dt_compat	= imx6q_dt_compat,
++	/*
++	 * i.MX6Q/DL maps system memory at 0x10000000 (offset 256MiB), and
++	 * GPU has a limit on physical address that it accesses, which must
++	 * be below 2GiB.
++	 */
++	.dma_zone_size	= (SZ_2G - SZ_256M),
++	.restart	= mxc_restart,
+ MACHINE_END
+diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
+index c06af650e6b1..8e42ebe0abff 100644
+--- a/arch/arm/mach-imx/system.c
++++ b/arch/arm/mach-imx/system.c
+@@ -35,12 +35,33 @@
+ static void __iomem *wdog_base;
+ static struct clk *wdog_clk;
+ static int wcr_enable = (1 << 2);
++static u32 wdog_source = 1; /* use WDOG1 default */
++extern void pfuze_core_val(void);
+ 
+ /*
+  * Reset the system. It is called by machine_restart().
+  */
+ void mxc_restart(enum reboot_mode mode, const char *cmd)
+ {
++	/* Increase the PMIC's SW1AB (VDDARM) voltage to 1.15 
++	   Otherwise system may not get to reboot in LDO bypass mode 
++	 */
++	if (of_machine_is_compatible("iw,qd_iwg15m_sm") || of_machine_is_compatible("iw,dls_iwg15m_sm"))
++	{
++		struct device_node *np;
++		u32 ldo_bypass;
++
++		np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-gpc");
++		if (!np) {
++			pr_warn("failed to find fsl,imx6q-gpc node\n");
++			of_node_put(np);
++		}
++		of_property_read_u32(np, "fsl,ldo-bypass", &ldo_bypass);
++
++		if (ldo_bypass)
++			pfuze_core_val();
++	}
++
+ 	if (!wdog_base)
+ 		goto reset_fallback;
+ 
+@@ -83,6 +104,41 @@ void __init mxc_arch_reset_init(void __iomem *base)
+ 		clk_prepare(wdog_clk);
+ }
+ 
++void __init mxc_arch_reset_init_dt(void)
++{
++	struct device_node *np = NULL;
++
++	if (cpu_is_imx6q() || cpu_is_imx6dl())
++		np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-gpc");
++	else if (cpu_is_imx6sl())
++		np = of_find_compatible_node(NULL, NULL, "fsl,imx6sl-gpc");
++
++	if (np)
++		of_property_read_u32(np, "fsl,wdog-reset", &wdog_source);
++	pr_info("Use WDOG%d as reset source\n", wdog_source);
++
++	np = of_find_compatible_node(NULL, NULL, "fsl,imx21-wdt");
++	wdog_base = of_iomap(np, 0);
++	WARN_ON(!wdog_base);
++
++	/* Some i.MX6 boards use WDOG2 to reset board in ldo-bypass mode */
++	if (wdog_source == 2 && (cpu_is_imx6q() || cpu_is_imx6dl() ||
++		cpu_is_imx6sl())) {
++		np = of_find_compatible_node(np, NULL, "fsl,imx21-wdt");
++		wdog_base = of_iomap(np, 0);
++		WARN_ON(!wdog_base);
++	}
++
++	wdog_clk = of_clk_get(np, 0);
++	if (IS_ERR(wdog_clk)) {
++		pr_warn("%s: failed to get wdog clock\n", __func__);
++		wdog_clk = NULL;
++		return;
++	}
++
++	clk_prepare(wdog_clk);
++}
++
+ #ifdef CONFIG_SOC_IMX1
+ void __init imx1_reset_init(void __iomem *base)
+ {
+diff --git a/drivers/clk/imx/clk-imx6q.c b/drivers/clk/imx/clk-imx6q.c
+index 03d8fd327507..8e5f4752ff83 100644
+--- a/drivers/clk/imx/clk-imx6q.c
++++ b/drivers/clk/imx/clk-imx6q.c
+@@ -942,21 +942,14 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+ 	clk_register_clkdev(clk[IMX6QDL_CLK_ENET_REF], "enet_ref", NULL);
+ 
+ 	clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
+-	if (clk_on_imx6dl()) {
+-		init_ipu_clk(anatop_base);
+-		clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
+-		clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
+-		clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
+-		/* set epdc/pxp axi clock to 200Mhz */
+-		clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
+-		clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
+-	} else {
+-		/* set eim_slow to 132Mhz for i.MX6Q */
+-		if (clk_on_imx6q())
+-			clk_set_rate(clk[IMX6QDL_CLK_EIM_SLOW], 132000000);
+-		clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_MMDC_CH0_AXI]);
+-		clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_MMDC_CH0_AXI]);
+-	}
++	/* IWG15: IPU: Added the below lines to fix for Frame buffer conflict with RGB LCD(fb0) & HDMI(fb2) */
++	init_ipu_clk(anatop_base);
++	clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
++	clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
++	clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
++	/* set epdc/pxp axi clock to 200Mhz */
++	clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
++	clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
+ 
+ 	clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI0_PRE_SEL], clk[IMX6QDL_CLK_PLL5_VIDEO_DIV]);
+ 	clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI1_PRE_SEL], clk[IMX6QDL_CLK_PLL5_VIDEO_DIV]);
+diff --git a/drivers/regulator/pfuze100-regulator.c b/drivers/regulator/pfuze100-regulator.c
+index 7f7fb013965a..f6b4b59df249 100644
+--- a/drivers/regulator/pfuze100-regulator.c
++++ b/drivers/regulator/pfuze100-regulator.c
+@@ -517,6 +517,79 @@ static inline struct device_node *match_of_node(int index)
+ }
+ #endif
+ 
++static int pfuze_read_reg(struct i2c_client *client,
++		u8 reg, u8 len, void *val)
++{
++	struct i2c_msg xfer[2];
++	u8 buf[1];
++	int ret;
++
++	buf[0] = reg & 0xff;
++
++	/* Write register */
++	xfer[0].addr = client->addr;
++	xfer[0].flags = 0;
++	xfer[0].len = 1;
++	xfer[0].buf = buf;
++
++	/* Read data */
++	xfer[1].addr = client->addr;
++	xfer[1].flags = I2C_M_RD;
++	xfer[1].len = len;
++	xfer[1].buf = val;
++
++	ret = i2c_transfer(client->adapter, xfer, 2);
++	if (ret == 2) {
++		ret = 0;
++	} else {
++		if (ret >= 0)
++			ret = -EIO;
++		dev_err(&client->dev, "%s: i2c transfer failed (%d)\n",
++				__func__, ret);
++	}
++
++	return ret;
++}
++
++static int pfuze_write_reg(struct i2c_client *client, u8 reg, u8 len,
++		const void *val)
++{
++	u8 *buf;
++	size_t count;
++	int ret;
++
++	count = len + 1;
++	buf = kmalloc(count, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	buf[0] = reg & 0xff;
++	memcpy(&buf[1], val, len);
++
++	ret = i2c_master_send(client, buf, count);
++	if (ret == count) {
++		ret = 0;
++	} else {
++		if (ret >= 0)
++			ret = -EIO;
++		dev_err(&client->dev, "%s: i2c send failed (%d)\n",
++				__func__, ret);
++	}
++
++	kfree(buf);
++	return ret;
++}
++
++static struct i2c_client *pfuze_client;
++void pfuze_core_val(void)
++{
++	u8 val;
++	/* Read the PMIC's SW1AB (VDDARM) value and increase to 1.15V */
++	pfuze_read_reg (pfuze_client, PFUZE100_SW1ABVOL, 1, &val);
++	val  = (val & 0xC0) | 0x22;
++	pfuze_write_reg (pfuze_client, PFUZE100_SW1ABVOL, 1, &val);
++}
++
+ static int pfuze_identify(struct pfuze_chip *pfuze_chip)
+ {
+ 	unsigned int value;
+@@ -605,6 +678,8 @@ static int pfuze100_regulator_probe(struct i2c_client *client,
+ 		return ret;
+ 	}
+ 
++	/* save the client address for increasing SW1AB voltage */
++	pfuze_client = client;
+ 	ret = pfuze_identify(pfuze_chip);
+ 	if (ret) {
+ 		dev_err(&client->dev, "unrecognized pfuze chip ID!\n");
+diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
+index deb2d16f893f..79d9e0ab7606 100644
+--- a/drivers/thermal/imx_thermal.c
++++ b/drivers/thermal/imx_thermal.c
+@@ -658,11 +658,11 @@ static int imx_get_sensor_data(struct platform_device *pdev)
+ 	}
+ 
+ 	/*
+-	 * Set the critical trip point at 5C under max
+-	 * Set the passive trip point at 10C under max (can change via sysfs)
++	 * Set the critical trip point at 10C under max
++	 * Set the passive trip point at 20C under max (can change via sysfs)
+ 	 */
+-	data->temp_critical = data->temp_max - (1000 * 5);
+-	data->temp_passive = data->temp_max - (1000 * 10);
++	data->temp_critical = data->temp_max - (1000 * 10);
++	data->temp_passive = data->temp_max - (1000 * 20);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/video/fbdev/mxc/mxc_lcdif.c b/drivers/video/fbdev/mxc/mxc_lcdif.c
+index 59d429c82017..58f77724d2b9 100644
+--- a/drivers/video/fbdev/mxc/mxc_lcdif.c
++++ b/drivers/video/fbdev/mxc/mxc_lcdif.c
+@@ -36,6 +36,13 @@ struct mxc_lcdif_data {
+ #define DISPDRV_LCD	"lcd"
+ 
+ static struct fb_videomode lcdif_modedb[] = {
++	/* IWG15M-SM: LCD: Parameters for the WQVGA LCD used */
++	{
++	/* 480x272 @ 57 Hz , pixel clk @ 27MHz */
++	"WQVGA", 60, 480, 272, 30030, 2, 2, 1, 2, 41, 10,
++	FB_SYNC_CLK_LAT_FALL,
++	FB_VMODE_NONINTERLACED,
++	0,},
+ 	{
+ 	/* 800x480 @ 57 Hz , pixel clk @ 27MHz */
+ 	"CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
+diff --git a/drivers/watchdog/imx2_wdt.c b/drivers/watchdog/imx2_wdt.c
+index 6a279a831479..bcf3bbff30a0 100644
+--- a/drivers/watchdog/imx2_wdt.c
++++ b/drivers/watchdog/imx2_wdt.c
+@@ -225,6 +225,8 @@ static irqreturn_t imx2_wdt_isr(int irq, void *wdog_arg)
+ 	return IRQ_HANDLED;
+ }
+ 
++/* IWG15S: WDOG: Fixed for watchdog Application reset issue in PICO */
++extern void pfuze_core_val(void);
+ static int imx2_wdt_start(struct watchdog_device *wdog)
+ {
+ 	struct imx2_wdt_device *wdev = watchdog_get_drvdata(wdog);
+@@ -236,6 +238,10 @@ static int imx2_wdt_start(struct watchdog_device *wdog)
+ 
+ 	set_bit(WDOG_HW_RUNNING, &wdog->status);
+ 
++	if (of_machine_is_compatible("iw,qd_iwg15m_sm") ||
++			of_machine_is_compatible("iw,dls_iwg15m_sm"))
++		pfuze_core_val();
++
+ 	return imx2_wdt_ping(wdog);
+ }
+ 

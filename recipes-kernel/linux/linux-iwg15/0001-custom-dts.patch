@@ -1,9 +1,9 @@
 diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
 new file mode 100644
-index 000000000000..c707e32784ea
+index 000000000000..e0c4ee0c546a
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,28 @@
 +/*
 + * Copyright (c) 2017-2018 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -17,13 +17,20 @@ index 000000000000..c707e32784ea
 +
 +#include "imx6dls-iwg15m-sm_ldobypass.dts"
 +
-+&cpu0 {
-+	arm-supply = <&reg_arm>;
-+	soc-supply = <&reg_soc>;
-+};
-+
 +&gpc {
 +	fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
++};
++
++&reg_arm {
++	/delete-property/ vin-supply;
++};
++
++&reg_pu {
++	/delete-property/ vin-supply;
++};
++
++&reg_soc {
++	/delete-property/ vin-supply;
 +};
 diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
 new file mode 100644
@@ -96,10 +103,10 @@ index 000000000000..0a7d3a20c43e
 +};
 diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
 new file mode 100644
-index 000000000000..74e64c34a379
+index 000000000000..731cae59e5a8
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,32 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -113,13 +120,20 @@ index 000000000000..74e64c34a379
 +
 +#include "imx6qd-iwg15m-sm_ldobypass.dts"
 +
-+&cpu0 {
-+	arm-supply = <&reg_arm>;
-+	soc-supply = <&reg_soc>;
-+};
-+
 +&gpc {
 +	fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
++};
++
++&reg_arm {
++	/delete-property/ vin-supply;
++};
++
++&reg_pu {
++	/delete-property/ vin-supply;
++};
++
++&reg_soc {
++	/delete-property/ vin-supply;
 +};
 +
 +&v4l2_cap_1 {
@@ -188,10 +202,10 @@ index 000000000000..d0adad63ed7b
 +};
 diff --git a/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
 new file mode 100644
-index 000000000000..da2bee309e92
+index 000000000000..67b3f016a76f
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
-@@ -0,0 +1,904 @@
+@@ -0,0 +1,909 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -394,17 +408,21 @@ index 000000000000..da2bee309e92
 +	};
 +};
 +
-+&reg_3p0 {
++&anatop_reg_3p0 {
 +	regulator-always-on;
 +};
 +
-+&cpu0 {
-+	arm-supply = <&sw1a_reg>;
-+	soc-supply = <&sw1c_reg>;
++&reg_arm {
++	vin-supply = <&sw1a_reg>;
 +};
 +
 +&reg_pu {
++	vin-supply = <&sw1c_reg>;
 +	regulator-always-on;
++};
++
++&reg_soc {
++	vin-supply = <&sw1c_reg>;
 +};
 +
 +&fec {
@@ -715,6 +733,7 @@ index 000000000000..da2bee309e92
 +			sw4_reg: sw4 {
 +				regulator-min-microvolt = <800000>;
 +				regulator-max-microvolt = <3300000>;
++				regulator-always-on;
 +			};
 +
 +			snvs_reg: vsnvs {
