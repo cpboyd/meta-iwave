@@ -1,9 +1,9 @@
-diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm.dtsi b/arch/arm/boot/dts/imx6dls-iwg15m-sm.dtsi
+diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
 new file mode 100644
-index 000000000000..51fa3a1c98d7
+index 000000000000..c707e32784ea
 --- /dev/null
-+++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm.dtsi
-@@ -0,0 +1,62 @@
++++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
+@@ -0,0 +1,21 @@
 +/*
 + * Copyright (c) 2017-2018 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -14,6 +14,35 @@ index 000000000000..51fa3a1c98d7
 + * http://www.opensource.org/licenses/gpl-license.html
 + * http://www.gnu.org/copyleft/gpl.html
 + */
++
++#include "imx6dls-iwg15m-sm_ldobypass.dts"
++
++&cpu0 {
++	arm-supply = <&reg_arm>;
++	soc-supply = <&reg_soc>;
++};
++
++&gpc {
++	fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
++};
+diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
+new file mode 100644
+index 000000000000..0a7d3a20c43e
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
+@@ -0,0 +1,63 @@
++/*
++ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/dts-v1/;
 +
 +#include "imx6dl.dtsi"
 +#include "imx6qdl-iwg15m-sm.dtsi"
@@ -65,15 +94,14 @@ index 000000000000..51fa3a1c98d7
 +		};
 +	};
 +};
-+
-diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
+diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
 new file mode 100644
-index 000000000000..88b64f8c7bcb
+index 000000000000..74e64c34a379
 --- /dev/null
-+++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldoactive.dts
-@@ -0,0 +1,23 @@
++++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
+@@ -0,0 +1,25 @@
 +/*
-+ * Copyright (c) 2017-2018 iWave Systems Technologies Pvt. Ltd.
++ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
 + * The code contained herein is licensed under the GNU General Public
 + * License. You may obtain a copy of the GNU General Public License
@@ -83,24 +111,26 @@ index 000000000000..88b64f8c7bcb
 + * http://www.gnu.org/copyleft/gpl.html
 + */
 +
-+/dts-v1/;
++#include "imx6qd-iwg15m-sm_ldobypass.dts"
 +
-+#include "imx6dls-iwg15m-sm.dtsi"
-+
-+/ {
-+	model = "iWave RainboW-G15M-SM Board with PMIC based on Freescale i.MX6 Duallite/Solo";
-+	compatible = "iw,dls_iwg15m_sm", "fsl,imx6q";
++&cpu0 {
++	arm-supply = <&reg_arm>;
++	soc-supply = <&reg_soc>;
 +};
 +
 +&gpc {
 +	fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
 +};
-diff --git a/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
++
++&v4l2_cap_1 {
++	ipu_id = <1>;
++};
+diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
 new file mode 100644
-index 000000000000..32a99829751c
+index 000000000000..d0adad63ed7b
 --- /dev/null
-+++ b/arch/arm/boot/dts/imx6dls-iwg15m-sm_ldobypass.dts
-@@ -0,0 +1,32 @@
++++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
+@@ -0,0 +1,55 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -113,42 +143,6 @@ index 000000000000..32a99829751c
 + */
 +
 +/dts-v1/;
-+
-+#include "imx6dls-iwg15m-sm.dtsi"
-+
-+/ {
-+	model = "iWave RainboW-G15M-SM Board with PMIC based on Freescale i.MX6 Duallite/Solo";
-+	compatible = "iw,dls_iwg15m_sm", "fsl,imx6q";
-+};
-+
-+&mxcfb1 {
-+	status = "okay";
-+};
-+
-+&mxcfb2 {
-+	status = "okay";
-+};
-+
-+&cpu0 {
-+	arm-supply = <&sw1a_reg>;
-+	soc-supply = <&sw1c_reg>;
-+};
-diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm.dtsi b/arch/arm/boot/dts/imx6qd-iwg15m-sm.dtsi
-new file mode 100644
-index 000000000000..d613d7143699
---- /dev/null
-+++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm.dtsi
-@@ -0,0 +1,54 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * The code contained herein is licensed under the GNU General Public
-+ * License. You may obtain a copy of the GNU General Public License
-+ * Version 2 or later at the following locations:
-+ *
-+ * http://www.opensource.org/licenses/gpl-license.html
-+ * http://www.gnu.org/copyleft/gpl.html
-+ */
 +
 +#include "imx6q.dtsi"
 +#include "imx6qdl-iwg15m-sm.dtsi"
@@ -192,76 +186,12 @@ index 000000000000..d613d7143699
 +		};
 +	};
 +};
-+
-diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
-new file mode 100644
-index 000000000000..73a1927617c0
---- /dev/null
-+++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldoactive.dts
-@@ -0,0 +1,27 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * The code contained herein is licensed under the GNU General Public
-+ * License. You may obtain a copy of the GNU General Public License
-+ * Version 2 or later at the following locations:
-+ *
-+ * http://www.opensource.org/licenses/gpl-license.html
-+ * http://www.gnu.org/copyleft/gpl.html
-+ */
-+
-+/dts-v1/;
-+
-+#include "imx6qd-iwg15m-sm.dtsi"
-+
-+/ {
-+	model = "iWave RainboW-G15M-SM Board with PMIC based on Freescale i.MX6 Quad/Dual";
-+	compatible = "iw,qd_iwg15m_sm", "fsl,imx6q";
-+};
-+
-+&v4l2_cap_1 {
-+	ipu_id = <1>;
-+};
-+
-+&gpc {
-+	fsl,ldo-bypass = <0>; /* use ldo-bypass, u-boot will check it and configure */
-+};
-diff --git a/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
-new file mode 100644
-index 000000000000..166cafd0bb45
---- /dev/null
-+++ b/arch/arm/boot/dts/imx6qd-iwg15m-sm_ldobypass.dts
-@@ -0,0 +1,24 @@
-+/*
-+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
-+ *
-+ * The code contained herein is licensed under the GNU General Public
-+ * License. You may obtain a copy of the GNU General Public License
-+ * Version 2 or later at the following locations:
-+ *
-+ * http://www.opensource.org/licenses/gpl-license.html
-+ * http://www.gnu.org/copyleft/gpl.html
-+ */
-+
-+/dts-v1/;
-+
-+#include "imx6qd-iwg15m-sm.dtsi"
-+
-+/ {
-+	model = "iWave RainboW-G15M-SM Board with PMIC based on Freescale i.MX6 Quad/Dual";
-+	compatible = "iw,qd_iwg15m_sm", "fsl,imx6q";
-+};
-+
-+&cpu0 {
-+	arm-supply = <&sw1a_reg>;
-+	soc-supply = <&sw1c_reg>;
-+};
 diff --git a/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
 new file mode 100644
-index 000000000000..cca03f42be68
+index 000000000000..da2bee309e92
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-iwg15m-sm.dtsi
-@@ -0,0 +1,901 @@
+@@ -0,0 +1,904 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -466,6 +396,11 @@ index 000000000000..cca03f42be68
 +
 +&reg_3p0 {
 +	regulator-always-on;
++};
++
++&cpu0 {
++	arm-supply = <&sw1a_reg>;
++	soc-supply = <&sw1c_reg>;
 +};
 +
 +&reg_pu {
@@ -805,7 +740,6 @@ index 000000000000..cca03f42be68
 +				regulator-max-microvolt = <3300000>;
 +				regulator-always-on;
 +			};
-+
 +		};
 +	};
 +};
@@ -1162,4 +1096,3 @@ index 000000000000..cca03f42be68
 +		};
 +	};
 +};
-+
