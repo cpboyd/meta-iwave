@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+/dts-v1/;
+
+#include "imx6dl.dtsi"
+#include "imx6qdl-iwg15m-sm.dtsi"
+
+/ {
+	model = "iWave RainboW-G15M-SM Board with PMIC based on Freescale i.MX6 Duallite/Solo";
+	compatible = "iw,dls_iwg15m_sm", "fsl,imx6q";
+};
+
+&aips1 {
+	vpu@02040000 {
+		iramsize = <0>;
+		status = "okay";
+	};
+};
+
+&iomuxc {
+	ipu1 {
+		pinctrl_csi1_1: ipu1-csi1-q7-pico {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_A17__IPU1_CSI1_DATA12    0x80000000
+				MX6QDL_PAD_EIM_A18__IPU1_CSI1_DATA13    0x80000000
+				MX6QDL_PAD_EIM_A19__IPU1_CSI1_DATA14    0x80000000
+				MX6QDL_PAD_EIM_A20__IPU1_CSI1_DATA15    0x80000000
+				MX6QDL_PAD_EIM_A21__IPU1_CSI1_DATA16    0x80000000
+				MX6QDL_PAD_EIM_A22__IPU1_CSI1_DATA17    0x80000000
+				MX6QDL_PAD_EIM_A23__IPU1_CSI1_DATA18    0x80000000
+				MX6QDL_PAD_EIM_A24__IPU1_CSI1_DATA19    0x80000000
+				MX6QDL_PAD_EIM_A16__IPU1_CSI1_PIXCLK    0x80000000
+				MX6QDL_PAD_EIM_EB3__IPU1_CSI1_HSYNC     0x80000000
+				MX6QDL_PAD_EIM_D29__IPU1_CSI1_VSYNC     0x80000000
+			>;
+		};
+		pinctrl_csi1_2: ipu1-csi1-mxm {
+			fsl,pins = <
+				MX6QDL_PAD_EIM_A17__IPU1_CSI1_DATA12    0x80000000
+				MX6QDL_PAD_EIM_A18__IPU1_CSI1_DATA13    0x80000000
+				MX6QDL_PAD_EIM_A19__IPU1_CSI1_DATA14    0x80000000
+				MX6QDL_PAD_EIM_A20__IPU1_CSI1_DATA15    0x80000000
+				MX6QDL_PAD_EIM_A21__IPU1_CSI1_DATA16    0x80000000
+				MX6QDL_PAD_EIM_A22__IPU1_CSI1_DATA17    0x80000000
+				MX6QDL_PAD_EIM_A23__IPU1_CSI1_DATA18    0x80000000
+				MX6QDL_PAD_EIM_A24__IPU1_CSI1_DATA19    0x80000000
+				MX6QDL_PAD_EIM_A16__IPU1_CSI1_PIXCLK    0x80000000
+				MX6QDL_PAD_EIM_DA11__IPU1_CSI1_HSYNC    0x80000000
+				MX6QDL_PAD_EIM_DA12__IPU1_CSI1_VSYNC    0x80000000
+				MX6QDL_PAD_EIM_DA0__GPIO3_IO00          0x80000000 /* Camera Power Down */
+			>;
+		};
+	};
+};
