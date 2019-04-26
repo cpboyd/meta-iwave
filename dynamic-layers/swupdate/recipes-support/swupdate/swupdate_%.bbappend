@@ -1,7 +1,8 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
-SRC_URI += "file://swupdate.cfg \
-            file://swupdate.default \
+SRC_URI += " \
+	file://swupdate.cfg \
+	file://swupdate.default \
 "
 
 do_install_append() {
