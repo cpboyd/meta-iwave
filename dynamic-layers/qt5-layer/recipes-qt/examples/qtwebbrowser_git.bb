@@ -12,7 +12,14 @@ QT_MODULE_BRANCH = "dev"
 SRCREV = "09d629199fa153ea7954321d81f647d5eb52fb6c"
 
 DEPENDS = "qtbase qtdeclarative qtwebengine"
-RDEPENDS_${PN} = "qtvirtualkeyboard"
+RDEPENDS_${PN} = " \
+	liberation-fonts \
+	qtvirtualkeyboard \
+	qtdeclarative-qmlplugins \
+	qtgraphicaleffects-qmlplugins \
+	qtquickcontrols-qmlplugins \
+	qtwebengine-qmlplugins \
+"
 
 do_install_append() {
 	install -d ${D}${datadir}/${PN}
