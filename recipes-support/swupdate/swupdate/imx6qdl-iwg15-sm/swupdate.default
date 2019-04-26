@@ -1,1 +1,2 @@
 hardware="imx6qdl-iwg15-sm"
+DAEMON_ARGS="-v -H ${hardware}:1.0 -f /etc/swupdate.cfg -w '' -p 'reboot'"

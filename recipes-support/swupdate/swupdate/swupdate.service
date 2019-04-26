@@ -6,7 +6,7 @@ Documentation=https://sbabic.github.io/swupdate
 [Service]
 ExecStartPre=-/usr/bin/swupdate-env
 EnvironmentFile=-/etc/default/swupdate
-ExecStart=/usr/bin/swupdate -v -H ${hardware}:1.0 -f /etc/swupdate.cfg $SWUPDATE_EXTRA_ARGS -w "" -p 'reboot'
+ExecStart=/usr/bin/swupdate -v -H ${hardware}:1.0 -f /etc/swupdate.cfg -w "" -p 'reboot' $SWUPDATE_EXTRA_ARGS
 
 [Install]
 WantedBy=multi-user.target
