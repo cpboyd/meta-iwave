@@ -14,17 +14,16 @@ inherit core-image distro_features_check
 ###          the validation process of i.MX BSP releases.
 
 IMAGE_FEATURES += " \
-    splash \
-    package-management \
-    ssh-server-dropbear \
-    hwcodecs \
-    debug-tweaks \
-    nfs-server \
-    tools-debug \
-    tools-testapps \
-    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '', \
-       bb.utils.contains('DISTRO_FEATURES',     'x11', 'x11-base x11-sato', \
-                                                       '', d), d)} \
+	splash \
+	package-management \
+	ssh-server-dropbear \
+	hwcodecs \
+	debug-tweaks \
+	nfs-server \
+	tools-debug \
+	tools-testapps \
+	${@bb.utils.contains('DISTRO_FEATURES', 'wayland', '', \
+	   bb.utils.contains('DISTRO_FEATURES',     'x11', 'x11-base x11-sato', '', d), d)} \
 "
 
 CORE_IMAGE_EXTRA_INSTALL += " \
@@ -38,9 +37,9 @@ CORE_IMAGE_EXTRA_INSTALL += " \
 	packagegroup-fsl-gstreamer1.0 \
 	packagegroup-fsl-gstreamer1.0-full \
 	${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'weston-init', '', d)} \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'x11 wayland', 'weston-xwayland xterm', '', d)} \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'xterm', '', d)} \
-        ${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'packagegroup-core-x11-sato-games', '', d)} \
+	${@bb.utils.contains('DISTRO_FEATURES', 'x11 wayland', 'weston-xwayland xterm', '', d)} \
+	${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'xterm', '', d)} \
+	${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'packagegroup-core-x11-sato-games', '', d)} \
 	nodejs \
 	flex \
 	gcc \
