@@ -7,9 +7,9 @@ BACKEND_FB_imxgpu3d = "eglfs"
 BACKEND = "${@bb.utils.contains('DISTRO_FEATURES', 'x11', 'xcb', \
 	   bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '${BACKEND_FB}', d), d)}"
 
-SRC_URI_append = "\
-	file://01-fix-eglfs_viv-integration.patch \
-"
+# SRC_URI_append = "\
+# 	file://01-fix-eglfs_viv-integration.patch \
+# "
 
 do_install_append () {
 	install -d ${D}${sysconfdir}/profile.d/
