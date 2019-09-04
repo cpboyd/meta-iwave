@@ -12,16 +12,16 @@ require recipes-kernel/linux/linux-imx.inc
 DEPENDS += "lzop-native bc-native"
 
 KERNEL_SRC ?= "git://source.codeaurora.org/external/imx/linux-imx;protocol=https"
-SRCBRANCH = "imx_4.14.78_1.0.0_ga"
+SRCBRANCH = "imx_4.14.98_2.0.0_ga"
 LOCALVERSION = "-${SRCBRANCH}"
-SRCREV = "94da7bdc489ba686d868bcf80678a37cae22673e"
+SRCREV = "1175b59611537b0b451e0d1071b1666873a8ec32"
 SRC_URI = "${KERNEL_SRC};branch=${SRCBRANCH} \
 	file://dts/imx6dls-iwg15m-sm_ldoactive.dts \
 	file://dts/imx6dls-iwg15m-sm_ldobypass.dts \
 	file://dts/imx6qd-iwg15m-sm_ldoactive.dts \
 	file://dts/imx6qd-iwg15m-sm_ldobypass.dts \
 	file://dts/imx6qdl-iwg15m-sm.dtsi \
-	file://0001-iwave-linux_${PV}.patch \
+	file://0001-iwave-linux.patch \
 	file://defconfig \
 "
 
