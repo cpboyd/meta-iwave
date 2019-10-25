@@ -1,5 +1,5 @@
 diff --git a/arch/arm/include/asm/arch-mx6/mx6-ddr.h b/arch/arm/include/asm/arch-mx6/mx6-ddr.h
-index 19d2f1d9c58..e103e134f51 100644
+index 19d2f1d9c5..e103e134f5 100644
 --- a/arch/arm/include/asm/arch-mx6/mx6-ddr.h
 +++ b/arch/arm/include/asm/arch-mx6/mx6-ddr.h
 @@ -6,6 +6,8 @@
@@ -20,7 +20,7 @@ index 19d2f1d9c58..e103e134f51 100644
  #define MX6_MMDC_P0_MDCTL	0x021b0000
  #define MX6_MMDC_P0_MDPDC	0x021b0004
 diff --git a/arch/arm/include/asm/arch-mx6/mx6_plugin.S b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
-index 02d855fbc30..c09cb1c7176 100644
+index 02d855fbc3..c09cb1c717 100644
 --- a/arch/arm/include/asm/arch-mx6/mx6_plugin.S
 +++ b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
 @@ -64,6 +64,26 @@ plugin_start:
@@ -60,15 +60,15 @@ index 02d855fbc30..c09cb1c7176 100644
  	blx r4
  after_calling_rom___pu_irom_hwcnfg_setup:
 diff --git a/arch/arm/mach-imx/mx6/Kconfig b/arch/arm/mach-imx/mx6/Kconfig
-index d5a5a7a38be..d6a639c0234 100644
+index d5a5a7a38b..3edf905325 100644
 --- a/arch/arm/mach-imx/mx6/Kconfig
 +++ b/arch/arm/mach-imx/mx6/Kconfig
 @@ -129,6 +129,15 @@ config TARGET_MX6SABRESD
      select BOARD_EARLY_INIT_F
      select NXP_BOARD_REVISION
  
-+config TARGET_MX6_IWAVE
-+	bool
++config TARGET_MX6_IWG15M_SM
++	bool "mx6_iwg15m_sm"
 +	select BOARD_LATE_INIT
 +	select MX6QDL
 +	select DM
@@ -79,22 +79,7 @@ index d5a5a7a38be..d6a639c0234 100644
  config TARGET_MX6QDLARM2
      bool
      select BOARD_LATE_INIT
-@@ -338,6 +347,14 @@ config TARGET_MX6SOLOSABRESD
-     select TARGET_MX6SABRESD
-     select MX6S
- 
-+config TARGET_MX6_IWG15M_SM
-+	bool "mx6_iwg15m_sm"
-+	select TARGET_MX6_IWAVE
-+
-+config TARGET_MX6_IWG15M_SM_MFG
-+	bool "mx6_iwg15m_sm_mfg"
-+	select TARGET_MX6_IWAVE
-+
- config TARGET_MX6SLEVK
- 	bool "mx6slevk"
- 	select MX6SL
-@@ -649,6 +666,7 @@ source "board/freescale/mx6ul_14x14_ddr3_arm2/Kconfig"
+@@ -649,6 +658,7 @@ source "board/freescale/mx6ul_14x14_ddr3_arm2/Kconfig"
  source "board/freescale/mx6ul_14x14_lpddr2_arm2/Kconfig"
  source "board/freescale/mx6ullevk/Kconfig"
  source "board/freescale/mx6ull_ddr3_arm2/Kconfig"
@@ -102,88 +87,12 @@ index d5a5a7a38be..d6a639c0234 100644
  source "board/grinn/liteboard/Kconfig"
  source "board/phytec/pcm058/Kconfig"
  source "board/phytec/pfla02/Kconfig"
-diff --git a/arch/arm/mach-imx/mx6/soc.c b/arch/arm/mach-imx/mx6/soc.c
-index 468259ea360..228a8b4209f 100644
---- a/arch/arm/mach-imx/mx6/soc.c
-+++ b/arch/arm/mach-imx/mx6/soc.c
-@@ -757,6 +757,59 @@ void get_board_serial(struct tag_serialnr *serialnr)
- }
- #endif
- 
-+#ifdef IWCONFIG_CMD_IMX_DOWNLOAD_MODE
-+#define PERSIST_WATCHDOG_RESET_BOOT		(0x10000000)
-+/*BOOT_CFG1[7..4] = 0x3 Boot from Serial ROM (I2C/SPI)*/
-+#define BOOT_MODE_SERIAL_ROM			(0x00000030)
-+
-+/* this function should call before enter linux, otherwise, you
-+ * watchdog reset will enter mfg download mode again, clear this bit
-+ * to prevent this behavior */
-+void clear_mfgmode_mem(void)
-+{
-+	u32 reg;
-+	reg = readl(SRC_BASE_ADDR + 0x40);
-+	reg &= ~BOOT_MODE_SERIAL_ROM;
-+	writel(reg, SRC_BASE_ADDR + 0x40);
-+
-+	reg = readl(SRC_BASE_ADDR + 0x44);
-+	reg &= ~PERSIST_WATCHDOG_RESET_BOOT;
-+	reg = writel(reg, SRC_BASE_ADDR + 0x44);
-+}
-+
-+int do_switch_mfgmode(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
-+{
-+	u32 reg;
-+
-+	/*
-+	* During reset, if GPR10[28] is 1, ROM will copy GPR9[25:0]
-+	* to SBMR1, which will determine what is the boot device.
-+	* Here SERIAL_ROM mode is selected
-+	*/
-+	reg = readl(SRC_BASE_ADDR + 0x40);
-+	reg |= BOOT_MODE_SERIAL_ROM;
-+	writel(reg, SRC_BASE_ADDR + 0x40);
-+
-+	reg = readl(SRC_BASE_ADDR + 0x44);
-+	reg |= PERSIST_WATCHDOG_RESET_BOOT;
-+	writel(reg, SRC_BASE_ADDR + 0x44);
-+
-+	/*
-+	* this watchdog reset will let chip enter mfgtool download
-+	* mode.
-+	*/
-+	do_reset(NULL, 0, 0, NULL);
-+
-+	return 0;
-+}
-+
-+U_BOOT_CMD(
-+	download_mode, 1, 1, do_switch_mfgmode,
-+	"download_mode - enter i.MX serial/usb download mode",
-+	""
-+);
-+#endif
-+
- #ifndef CONFIG_SPL_BUILD
- /*
-  * cfg_val will be used for
-@@ -1044,7 +1097,11 @@ void prep_anatop_bypass(void)
- 	if (!arm_orig_podf)
- 		set_arm_freq_400M(true);
- 
-+#ifndef IWCONFIG_MX6_IWG15
- 	if (!is_mx6dl() && !is_mx6sx())
-+#else
-+	if(is_mx6dq())
-+#endif
- 		set_ldo_voltage(LDO_ARM, 975);
- 	else
- 		set_ldo_voltage(LDO_ARM, 1150);
 diff --git a/board/freescale/mx6_iwg15m_sm/Kconfig b/board/freescale/mx6_iwg15m_sm/Kconfig
 new file mode 100644
-index 00000000000..5dece3c3849
+index 0000000000..98721e2fae
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/Kconfig
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,18 @@
 +if TARGET_MX6_IWG15M_SM	
 +
 +config SYS_BOARD
@@ -202,28 +111,9 @@ index 00000000000..5dece3c3849
 +	default 0x17800000
 +
 +endif
-+
-+if TARGET_MX6_IWG15M_SM_MFG
-+
-+config SYS_BOARD
-+	default "mx6_iwg15m_sm"
-+
-+config SYS_VENDOR
-+	default "freescale"
-+
-+config SYS_SOC
-+	default "mx6"
-+
-+config SYS_CONFIG_NAME
-+	default "mx6_iwg15m_sm_mfg"
-+
-+config SYS_TEXT_BASE
-+	default 0x17800000
-+
-+endif
 diff --git a/board/freescale/mx6_iwg15m_sm/MAINTAINERS b/board/freescale/mx6_iwg15m_sm/MAINTAINERS
 new file mode 100644
-index 00000000000..cb786c41245
+index 0000000000..cb786c4124
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/MAINTAINERS
 @@ -0,0 +1,8 @@
@@ -237,7 +127,7 @@ index 00000000000..cb786c41245
 +F:	configs/mx6_iwg15m_sm_qd_mfg_defconfig
 diff --git a/board/freescale/mx6_iwg15m_sm/Makefile b/board/freescale/mx6_iwg15m_sm/Makefile
 new file mode 100644
-index 00000000000..731059ccde4
+index 0000000000..731059ccde
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/Makefile
 @@ -0,0 +1,7 @@
@@ -250,7 +140,7 @@ index 00000000000..731059ccde4
 +obj-y  := mx6_iwg15m_sm.o
 diff --git a/board/freescale/mx6_iwg15m_sm/mx6_iwg15m.cfg b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m.cfg
 new file mode 100644
-index 00000000000..484b8e3c2a4
+index 0000000000..484b8e3c2a
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m.cfg
 @@ -0,0 +1,173 @@
@@ -429,10 +319,10 @@ index 00000000000..484b8e3c2a4
 +#endif
 diff --git a/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.c b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.c
 new file mode 100644
-index 00000000000..89b23b9c3f3
+index 0000000000..edef529ed3
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.c
-@@ -0,0 +1,780 @@
+@@ -0,0 +1,755 @@
 +/*
 + * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
 + *
@@ -451,7 +341,6 @@ index 00000000000..89b23b9c3f3
 +
 +#include <asm/arch/clock.h>
 +#include <asm/arch/imx-regs.h>
-+#include <asm/arch/crm_regs.h>
 +#include <asm/arch/iomux.h>
 +#include <asm/arch/mx6-pins.h>
 +#include <asm/mach-imx/spi.h>
@@ -461,8 +350,6 @@ index 00000000000..89b23b9c3f3
 +#include <asm/mach-imx/iomux-v3.h>
 +#include <asm/mach-imx/boot_mode.h>
 +#include <asm/mach-imx/video.h>
-+#include <common.h>
-+#include <asm/io.h>
 +#include <mmc.h>
 +#include <fsl_esdhc.h>
 +#include <micrel.h>
@@ -474,18 +361,12 @@ index 00000000000..89b23b9c3f3
 +#include <asm/arch/sys_proto.h>
 +#include <i2c.h>
 +#include <input.h>
-+#include <ipu_pixfmt.h>
-+#include <linux/fb.h>
 +#include <power/pmic.h>
 +#include <power/pfuze100_pmic.h>
 +#include "../common/pfuze.h"
 +#include <usb.h>
 +#include <usb/ehci-ci.h>
 +#include <asm/arch/mx6-ddr.h>
-+#if defined(CONFIG_MXC_EPDC)
-+#include <lcd.h>
-+#include <mxc_epdc_fb.h>
-+#endif
 +#ifdef CONFIG_SATA
 +#include <asm/mach-imx/sata.h>
 +#endif
@@ -525,16 +406,9 @@ index 00000000000..89b23b9c3f3
 +
 +#define is_mx6dlsolo()	(is_mx6dl() || is_mx6solo())
 +
-+bool lvds_enabled=false;
-+int pmic_enabled = 0;
-+
 +int dram_init(void)
 +{
-+#ifdef CONFIG_MFG
-+	if (is_mx6dlsolo())
-+#else
 +	if (is_mx6solo())
-+#endif
 +		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE_512MB);
 +	else
 +		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
@@ -618,7 +492,6 @@ index 00000000000..89b23b9c3f3
 +
 +static void setup_iomux_backlight_off(void)
 +{
-+	int ret;
 +	/* Setup backlight */
 +	SETUP_IOMUX_PADS(bl_pads);
 +	/* Turn off backlight until display is ready */
@@ -693,16 +566,14 @@ index 00000000000..89b23b9c3f3
 +
 +#define USDHC3_CD_GPIO	IMX_GPIO_NR(3, 25)
 +
-+int mmc_get_env_devno(void)
++int board_mmc_get_env_dev(int devno)
 +{
-+	u32 soc_sbmr = readl(SRC_BASE_ADDR + 0x4);
++	return (devno > 1) ? devno - 1 : devno;
++}
 +
-+	/* IWG15M: MMC:Slot No fixed at dynamic env store for SD3 & SD4 */
-+	/* BOOT_CFG2[3] and BOOT_CFG2[4] */
-+	if (((soc_sbmr & 0x00001800) >> 11) > 1 )
-+		return (((soc_sbmr & 0x00001800) >> 11 ) - 1);
-+	else
-+		return (soc_sbmr & 0x00001800) >> 11;
++int mmc_map_to_kernel_blk(int devno)
++{
++	return devno + 2;
 +}
 +
 +int board_mmc_getcd(struct mmc *mmc)
@@ -932,11 +803,6 @@ index 00000000000..89b23b9c3f3
 +	return 1;
 +}
 +
-+static void setup_fec(void)
-+{
-+
-+}
-+
 +int board_eth_init(bd_t *bis)
 +{
 +	setup_iomux_enet();
@@ -985,9 +851,6 @@ index 00000000000..89b23b9c3f3
 +	setup_sata();
 +#endif
 +
-+#ifdef CONFIG_FEC_MXC
-+	setup_fec();
-+#endif
 +	unused_gpio_setup();
 +
 +	return 0;
@@ -1003,8 +866,6 @@ index 00000000000..89b23b9c3f3
 +	pfuze = pfuze_common_init(I2C_PMIC);
 +	if (!pfuze)
 +		return -ENODEV;
-+
-+	pmic_enabled = 1;
 +
 +	ret = pfuze_mode_init(pfuze, APS_PFM);
 +	if (ret < 0)
@@ -1175,6 +1036,10 @@ index 00000000000..89b23b9c3f3
 +
 +   print_board_info();
 +
++#ifdef CONFIG_ENV_IS_IN_MMC
++	board_late_mmc_env_init();
++#endif
++
 +	return 0;
 +}
 +
@@ -1215,7 +1080,7 @@ index 00000000000..89b23b9c3f3
 +}
 diff --git a/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.h b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.h
 new file mode 100644
-index 00000000000..a878de367ed
+index 0000000000..a878de367e
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/mx6_iwg15m_sm.h
 @@ -0,0 +1,225 @@
@@ -1446,7 +1311,7 @@ index 00000000000..a878de367ed
 +
 diff --git a/board/freescale/mx6_iwg15m_sm/plugin.S b/board/freescale/mx6_iwg15m_sm/plugin.S
 new file mode 100644
-index 00000000000..7df66d04cd0
+index 0000000000..7df66d04cd
 --- /dev/null
 +++ b/board/freescale/mx6_iwg15m_sm/plugin.S
 @@ -0,0 +1,531 @@
@@ -1981,27 +1846,8 @@ index 00000000000..7df66d04cd0
 +
 +/* include the common plugin code here */
 +#include <asm/arch/mx6_plugin.S>
-diff --git a/common/usb.c b/common/usb.c
-index 8d27bc70607..a9bff6399fa 100644
---- a/common/usb.c
-+++ b/common/usb.c
-@@ -1198,6 +1198,14 @@ int usb_new_device(struct usb_device *dev)
- 	if (err < 0)
- 		return err;
- 
-+#ifdef IWCONFIG_MX6_IWG15
-+	/* IWG15M: USB: Added to boot Kernel from USB */
-+	usb_hub_probe(dev, 1);
-+	usb_hub_probe(dev, 2);
-+	usb_hub_probe(dev, 3);
-+	usb_hub_probe(dev, 4);
-+#endif
-+
- 	return 0;
- }
- #endif
 diff --git a/drivers/net/fec_mxc.c b/drivers/net/fec_mxc.c
-index cc23aeacf5c..885780505d2 100644
+index cc23aeacf5..885780505d 100644
 --- a/drivers/net/fec_mxc.c
 +++ b/drivers/net/fec_mxc.c
 @@ -1171,6 +1171,31 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
@@ -2036,38 +1882,3 @@ index cc23aeacf5c..885780505d2 100644
  #ifdef CONFIG_PHYLIB
  	phydev = phy_find_by_mask(bus, 1 << phy_id, PHY_INTERFACE_MODE_RGMII);
  	if (!phydev) {
-diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
-index d137bfdca0b..ddaa09338da 100644
---- a/drivers/thermal/imx_thermal.c
-+++ b/drivers/thermal/imx_thermal.c
-@@ -215,6 +215,30 @@ int imx_thermal_get_temp(struct udevice *dev, int *temp)
- 
- 	cpu_tmp = read_cpu_temperature(dev);
- 
-+#ifdef IWCONFIG_MX6_IWG15
-+	int passive;
-+	/*Added to set the critical and passive temperature based on temperature grading value*/
-+	switch (get_cpu_temp_grade(&priv->minc, &priv->maxc)) {
-+	case TEMP_AUTOMOTIVE: /* Automotive (-40 to 125C) */
-+		passive = 100;
-+		break;
-+	case TEMP_INDUSTRIAL: /* Industrial (-40 to 105C) */
-+		passive = 85;
-+		break;
-+	case TEMP_EXTCOMMERCIAL: /* Extended Commercial (-20 to 105C) */
-+		passive = 85;
-+		break;
-+	default: /* Commercial (0 to 95C) */
-+		passive = 75;
-+		break;
-+	}
-+ 	/*
-+	 * Set the default critical trip point to 10 C higher
-+	 * than passive trip point. Can be changed from userspace.
-+	 */
-+	priv->critical = passive + 10;
-+#endif
-+
- 	while (cpu_tmp >= priv->critical) {
- 		printf("CPU Temperature (%dC) too close to max (%dC)",
- 		       cpu_tmp, priv->maxc);

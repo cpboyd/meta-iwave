@@ -30,7 +30,6 @@
 #include "mx6_common.h"
 
 #define IWCONFIG_MX6_IWG15
-#define IWCONFIG_CMD_IMX_DOWNLOAD_MODE
 
 #define CONFIG_SYS_L2_PL310
 
