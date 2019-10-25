@@ -1,5 +1,5 @@
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index daed0e76a1e8..c584e9b0ef4d 100644
+index 76780229f9d6..a541e42b51af 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -496,7 +496,11 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
@@ -28,7 +28,7 @@ index 7693cbdf1a9f..b1b5c129298c 100644
  	help
  	  This enables support for Freescale i.MX6 Quad processor.
 diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
-index 97af9d698908..6c023a2d40e2 100644
+index b52bc47ccdd7..444e9fe20b42 100644
 --- a/arch/arm/mach-imx/Makefile
 +++ b/arch/arm/mach-imx/Makefile
 @@ -93,7 +93,7 @@ obj-y += busfreq_lpddr2.o busfreq-imx.o busfreq_ddr3.o
@@ -535,10 +535,10 @@ index c06af650e6b1..8e42ebe0abff 100644
  void __init imx1_reset_init(void __iomem *base)
  {
 diff --git a/drivers/clk/imx/clk-imx6q.c b/drivers/clk/imx/clk-imx6q.c
-index 03d8fd327507..8e5f4752ff83 100644
+index 19cd0bfd0fc2..2eb74b3b6cea 100644
 --- a/drivers/clk/imx/clk-imx6q.c
 +++ b/drivers/clk/imx/clk-imx6q.c
-@@ -942,21 +942,14 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
+@@ -946,21 +946,14 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
  	clk_register_clkdev(clk[IMX6QDL_CLK_ENET_REF], "enet_ref", NULL);
  
  	clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
@@ -661,26 +661,6 @@ index 7f7fb013965a..f6b4b59df249 100644
  	ret = pfuze_identify(pfuze_chip);
  	if (ret) {
  		dev_err(&client->dev, "unrecognized pfuze chip ID!\n");
-diff --git a/drivers/thermal/imx_thermal.c b/drivers/thermal/imx_thermal.c
-index deb2d16f893f..79d9e0ab7606 100644
---- a/drivers/thermal/imx_thermal.c
-+++ b/drivers/thermal/imx_thermal.c
-@@ -658,11 +658,11 @@ static int imx_get_sensor_data(struct platform_device *pdev)
- 	}
- 
- 	/*
--	 * Set the critical trip point at 5C under max
--	 * Set the passive trip point at 10C under max (can change via sysfs)
-+	 * Set the critical trip point at 10C under max
-+	 * Set the passive trip point at 20C under max (can change via sysfs)
- 	 */
--	data->temp_critical = data->temp_max - (1000 * 5);
--	data->temp_passive = data->temp_max - (1000 * 10);
-+	data->temp_critical = data->temp_max - (1000 * 10);
-+	data->temp_passive = data->temp_max - (1000 * 20);
- 
- 	return 0;
- }
 diff --git a/drivers/video/fbdev/mxc/mxc_lcdif.c b/drivers/video/fbdev/mxc/mxc_lcdif.c
 index 59d429c82017..58f77724d2b9 100644
 --- a/drivers/video/fbdev/mxc/mxc_lcdif.c
