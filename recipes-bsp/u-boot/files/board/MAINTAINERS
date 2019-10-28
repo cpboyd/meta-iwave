@@ -1,0 +1,8 @@
+MX6_IWG15M_SM BOARD
+M:	iWavesystems <support.ip@iwavesystems.com>
+S:	Maintained
+F:	board/freescale/mx6_iwg15m_sm/
+F:	include/configs/mx6_iwg15m_sm.h
+F:	configs/mx6_iwg15m_sm_defconfig
+F:	configs/mx6_iwg15m_sm_dls_mfg_defconfig
+F:	configs/mx6_iwg15m_sm_qd_mfg_defconfig

@@ -13,6 +13,7 @@ UBOOT_SRC ?= "git://source.codeaurora.org/external/imx/uboot-imx.git;protocol=ht
 SRCREV = "0d6d8807793e74402e23772062469aeb4808dd48"
 SRC_URI = "${UBOOT_SRC};branch=${SRCBRANCH} \
 	file://0001-iwave.patch \
+	file://board/ \
 	file://configs/mx6_iwg15m_sm_defconfig \
 	file://configs/mx6_iwg15_common.h \
 	file://configs/mx6_iwg15m_sm.h \
@@ -22,6 +23,9 @@ S = "${WORKDIR}/git"
 
 do_configure_prepend() {
 	# install config files
-	install -m 0644 ${WORKDIR}/configs/*_defconfig ${S}/configs
-	install -m 0644 ${WORKDIR}/configs/*.h ${S}/include/configs
+	cp ${WORKDIR}/configs/*_defconfig ${S}/configs
+	cp ${WORKDIR}/configs/*.h ${S}/include/configs
+
+	mkdir -p ${S}/board/freescale/mx6_iwg15m_sm
+	cp ${WORKDIR}/board/* ${S}/board/freescale/mx6_iwg15m_sm
 }
