@@ -8,7 +8,6 @@ SRC_URI += " \
 	file://dts/imx6qd-iwg15m-sm_ldobypass.dts \
 	file://dts/imx6qdl-iwg15m-sm.dtsi \
 	file://0001-iwave-linux.patch \
-	file://defconfig \
 "
 
 do_configure_prepend() {
