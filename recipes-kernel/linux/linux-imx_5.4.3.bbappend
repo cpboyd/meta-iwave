@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Christopher Boyd
+# Copyright (C) 2020 Christopher Boyd
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 
 SRC_URI += " \
@@ -7,6 +7,7 @@ SRC_URI += " \
 	file://dts/imx6qd-iwg15m-sm_ldoactive.dts \
 	file://dts/imx6qd-iwg15m-sm_ldobypass.dts \
 	file://dts/imx6qdl-iwg15m-sm.dtsi \
+	file://0001-nxp-flexcan.patch \
 	file://0001-iwave-linux.patch \
 "
 

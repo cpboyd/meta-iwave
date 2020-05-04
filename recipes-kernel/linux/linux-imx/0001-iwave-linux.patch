@@ -1,11 +1,11 @@
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 76780229f9d6..a541e42b51af 100644
+index 813456cc48c5..d86e4c338439 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -496,7 +496,11 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
- 	imx6qp-sabresd-hdcp.dtb \
- 	imx6qp-sabresd-ldo.dtb \
- 	imx6qp-sabresd-ldo-pcie-cert.dtb \
+@@ -570,7 +570,11 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
+ 	imx6qp-tx6qp-8137.dtb \
+ 	imx6qp-tx6qp-8137-mb7.dtb \
+ 	imx6qp-wandboard-revd1.dtb \
 -	imx6qp-zii-rdu2.dtb
 +	imx6qp-zii-rdu2.dtb \
 +	imx6qd-iwg15m-sm_ldoactive.dtb \
@@ -14,32 +14,32 @@ index 76780229f9d6..a541e42b51af 100644
 +	imx6dls-iwg15m-sm_ldobypass.dtb
  dtb-$(CONFIG_SOC_IMX6SL) += \
  	imx6sl-evk.dtb \
- 	imx6sl-evk-btwifi.dtb \
+ 	imx6sl-evk-ldo.dtb \
 diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index 7693cbdf1a9f..b1b5c129298c 100644
+index cb6340b2eb33..ec83514ab779 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
-@@ -524,6 +524,7 @@ config SOC_IMX6Q
+@@ -508,6 +508,7 @@ config SOC_IMX6Q
+ 	select HAVE_ARM_TWD
  	select PINCTRL_IMX6Q
  	select SOC_IMX6
- 	select MXC_MLB150
 +	select ZONE_DMA
  
  	help
  	  This enables support for Freescale i.MX6 Quad processor.
 diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
-index b52bc47ccdd7..444e9fe20b42 100644
+index 98a07af52779..ebaa4aec0fce 100644
 --- a/arch/arm/mach-imx/Makefile
 +++ b/arch/arm/mach-imx/Makefile
-@@ -93,7 +93,7 @@ obj-y += busfreq_lpddr2.o busfreq-imx.o busfreq_ddr3.o
- AFLAGS_ddr3_freq_imx6.o :=-Wa,-march=armv7-a
- AFLAGS_smp_wfe_imx6.o :=-Wa,-march=armv7-a
- AFLAGS_lpddr2_freq_imx6q.o :=-Wa,-march=armv7-a
+@@ -87,7 +87,7 @@ AFLAGS_headsmp.o :=-Wa,-march=armv7-a
+ obj-$(CONFIG_SMP) += headsmp.o platsmp.o
+ obj-$(CONFIG_HOTPLUG_CPU) += hotplug.o
+ endif
 -obj-$(CONFIG_SOC_IMX6Q) += mach-imx6q.o ddr3_freq_imx6.o smp_wfe_imx6.o \
 +obj-$(CONFIG_SOC_IMX6Q) += mach-imx6q.o mach-imx6q-iwave.o ddr3_freq_imx6.o smp_wfe_imx6.o \
- 			   lpddr2_freq_imx6q.o
- AFLAGS_lpddr2_freq_imx6.o :=-Wa,-march=armv7-a
+ 				lpddr2_freq_imx6q.o
  obj-$(CONFIG_SOC_IMX6SL) += mach-imx6sl.o lpddr2_freq_imx6.o
+ obj-$(CONFIG_SOC_IMX6SLL) += mach-imx6sl.o lpddr2_freq_imx6sll.o
 diff --git a/arch/arm/mach-imx/mach-imx6q-iwave.c b/arch/arm/mach-imx/mach-imx6q-iwave.c
 new file mode 100644
 index 000000000000..38eb1be65efa
@@ -269,11 +269,11 @@ index 000000000000..38eb1be65efa
 + */
 +device_initcall_sync(imx6q_iwave_init);
 diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
-index 7b2462f7f598..98edb6b7bd10 100644
+index 730ce83eee0e..b4bba0315ade 100644
 --- a/arch/arm/mach-imx/mach-imx6q.c
 +++ b/arch/arm/mach-imx/mach-imx6q.c
-@@ -11,17 +11,20 @@
-  * http://www.gnu.org/copyleft/gpl.html
+@@ -4,17 +4,23 @@
+  * Copyright 2011 Linaro Ltd.
   */
  
 +#include <linux/can/platform/flexcan.h>
@@ -283,6 +283,9 @@ index 7b2462f7f598..98edb6b7bd10 100644
  #include <linux/delay.h>
  #include <linux/export.h>
 +#include <linux/gpio.h>
++#include <linux/fec.h>
++#include <linux/netdevice.h>
++#include <linux/libata.h>
  #include <linux/init.h>
  #include <linux/io.h>
  #include <linux/irq.h>
@@ -293,17 +296,7 @@ index 7b2462f7f598..98edb6b7bd10 100644
  #include <linux/of_irq.h>
  #include <linux/of_platform.h>
  #include <linux/pm_opp.h>
-@@ -33,6 +36,9 @@
- #include <linux/mfd/syscon.h>
- #include <linux/mfd/syscon/imx6q-iomuxc-gpr.h>
- #include <linux/of_net.h>
-+#include <linux/fec.h>
-+#include <linux/netdevice.h>
-+#include <linux/libata.h>
- #include <asm/mach/arch.h>
- #include <asm/mach/map.h>
- #include <asm/system_misc.h>
-@@ -41,6 +47,12 @@
+@@ -33,6 +39,12 @@
  #include "cpuidle.h"
  #include "hardware.h"
  
@@ -316,7 +309,7 @@ index 7b2462f7f598..98edb6b7bd10 100644
  /* For imx6q sabrelite board: set KSZ9021RN RGMII pad skew */
  static int ksz9021rn_phy_fixup(struct phy_device *phydev)
  {
-@@ -61,6 +73,32 @@ static int ksz9021rn_phy_fixup(struct phy_device *phydev)
+@@ -53,6 +65,32 @@ static int ksz9021rn_phy_fixup(struct phy_device *phydev)
  	return 0;
  }
  
@@ -349,13 +342,18 @@ index 7b2462f7f598..98edb6b7bd10 100644
  static void mmd_write_reg(struct phy_device *dev, int device, int reg, int val)
  {
  	phy_write(dev, 0x0d, device);
-@@ -313,8 +351,59 @@ static inline void imx6q_enet_init(void)
+@@ -285,6 +323,7 @@ static inline void imx6q_enet_init(void)
  	imx6q_1588_init();
  	if (cpu_is_imx6q() && imx_get_soc_revision() >= IMX_CHIP_REVISION_2_0)
  		imx6q_enet_clk_sel();
 +	imx6q_enet_plt_init();
-+}
-+
+ }
+ 
+ static void __init imx6q_axi_init(void)
+@@ -320,6 +359,56 @@ static void __init imx6q_axi_init(void)
+ 	}
+ }
+ 
 +static void imx6q_flexcan0_switch_auto(int enable)
 +{
 +	/* Active low enables the CAN tranceiver */
@@ -366,8 +364,8 @@ index 7b2462f7f598..98edb6b7bd10 100644
 +{
 +	/* Active low enables the CAN tranceiver */
 +	gpio_set_value_cansleep(flexcan1_en_gpio, !enable);
- }
- 
++}
++
 +static struct flexcan_platform_data flexcan_pdata[2];
 +static int __init imx6q_flexcan_fixup_auto(void)
 +{
@@ -409,7 +407,7 @@ index 7b2462f7f598..98edb6b7bd10 100644
  static void __init imx6q_init_machine(void)
  {
  	struct device *parent;
-@@ -325,11 +414,13 @@ static void __init imx6q_init_machine(void)
+@@ -330,11 +419,13 @@ static void __init imx6q_init_machine(void)
  		imx_print_silicon_rev(cpu_is_imx6dl() ? "i.MX6DL" : "i.MX6Q",
  				imx_get_soc_revision());
  
@@ -422,18 +420,18 @@ index 7b2462f7f598..98edb6b7bd10 100644
 -	of_platform_default_populate(NULL, NULL, parent);
 +	of_platform_default_populate(NULL, imx6q_auxdata_lookup, parent);
  
- 	imx6q_enet_init();
  	imx_anatop_init();
-@@ -442,6 +533,8 @@ static void __init imx6q_init_late(void)
- 		imx6q_opp_init();
- 		platform_device_register(&imx6q_cpufreq_pdev);
- 	}
+ 	imx6q_enet_init();
+@@ -357,6 +448,8 @@ static void __init imx6q_init_late(void)
+ 
+ 	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ))
+ 		platform_device_register_simple("imx6q-cpufreq", -1, NULL, 0);
 +
 +	imx6q_flexcan_fixup_auto();
  }
  
  static void __init imx6q_map_io(void)
-@@ -463,6 +556,8 @@ static void __init imx6q_init_irq(void)
+@@ -378,6 +471,8 @@ static void __init imx6q_init_irq(void)
  }
  
  static const char * const imx6q_dt_compat[] __initconst = {
@@ -442,7 +440,7 @@ index 7b2462f7f598..98edb6b7bd10 100644
  	"fsl,imx6dl",
  	"fsl,imx6q",
  	"fsl,imx6qp",
-@@ -478,4 +573,11 @@ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
+@@ -393,4 +488,11 @@ DT_MACHINE_START(IMX6Q, "Freescale i.MX6 Quad/DualLite (Device Tree)")
  	.init_machine	= imx6q_init_machine,
  	.init_late      = imx6q_init_late,
  	.dt_compat	= imx6q_dt_compat,
@@ -455,10 +453,10 @@ index 7b2462f7f598..98edb6b7bd10 100644
 +	.restart	= mxc_restart,
  MACHINE_END
 diff --git a/arch/arm/mach-imx/system.c b/arch/arm/mach-imx/system.c
-index c06af650e6b1..8e42ebe0abff 100644
+index e88ca027129d..00cad8c83a37 100644
 --- a/arch/arm/mach-imx/system.c
 +++ b/arch/arm/mach-imx/system.c
-@@ -35,12 +35,33 @@
+@@ -26,12 +26,33 @@
  static void __iomem *wdog_base;
  static struct clk *wdog_clk;
  static int wcr_enable = (1 << 2);
@@ -492,7 +490,7 @@ index c06af650e6b1..8e42ebe0abff 100644
  	if (!wdog_base)
  		goto reset_fallback;
  
-@@ -83,6 +104,41 @@ void __init mxc_arch_reset_init(void __iomem *base)
+@@ -74,6 +95,41 @@ void __init mxc_arch_reset_init(void __iomem *base)
  		clk_prepare(wdog_clk);
  }
  
@@ -534,47 +532,13 @@ index c06af650e6b1..8e42ebe0abff 100644
  #ifdef CONFIG_SOC_IMX1
  void __init imx1_reset_init(void __iomem *base)
  {
-diff --git a/drivers/clk/imx/clk-imx6q.c b/drivers/clk/imx/clk-imx6q.c
-index 19cd0bfd0fc2..2eb74b3b6cea 100644
---- a/drivers/clk/imx/clk-imx6q.c
-+++ b/drivers/clk/imx/clk-imx6q.c
-@@ -946,21 +946,14 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
- 	clk_register_clkdev(clk[IMX6QDL_CLK_ENET_REF], "enet_ref", NULL);
- 
- 	clk_set_rate(clk[IMX6QDL_CLK_PLL3_PFD1_540M], 540000000);
--	if (clk_on_imx6dl()) {
--		init_ipu_clk(anatop_base);
--		clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
--		clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
--		clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
--		/* set epdc/pxp axi clock to 200Mhz */
--		clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
--		clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
--	} else {
--		/* set eim_slow to 132Mhz for i.MX6Q */
--		if (clk_on_imx6q())
--			clk_set_rate(clk[IMX6QDL_CLK_EIM_SLOW], 132000000);
--		clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_MMDC_CH0_AXI]);
--		clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_MMDC_CH0_AXI]);
--	}
-+	/* IWG15: IPU: Added the below lines to fix for Frame buffer conflict with RGB LCD(fb0) & HDMI(fb2) */
-+	init_ipu_clk(anatop_base);
-+	clk_set_parent(clk[IMX6QDL_CLK_IPU1_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
-+	clk_set_parent(clk[IMX6QDL_CLK_AXI_ALT_SEL], clk[IMX6QDL_CLK_PLL3_PFD1_540M]);
-+	clk_set_parent(clk[IMX6QDL_CLK_AXI_SEL], clk[IMX6QDL_CLK_AXI_ALT_SEL]);
-+	/* set epdc/pxp axi clock to 200Mhz */
-+	clk_set_parent(clk[IMX6QDL_CLK_IPU2_SEL], clk[IMX6QDL_CLK_PLL2_PFD2_396M]);
-+	clk_set_rate(clk[IMX6QDL_CLK_IPU2], 200000000);
- 
- 	clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI0_PRE_SEL], clk[IMX6QDL_CLK_PLL5_VIDEO_DIV]);
- 	clk_set_parent(clk[IMX6QDL_CLK_IPU1_DI1_PRE_SEL], clk[IMX6QDL_CLK_PLL5_VIDEO_DIV]);
 diff --git a/drivers/regulator/pfuze100-regulator.c b/drivers/regulator/pfuze100-regulator.c
-index 7f7fb013965a..f6b4b59df249 100644
+index c34588d9f3aa..8cd73c1d5aca 100644
 --- a/drivers/regulator/pfuze100-regulator.c
 +++ b/drivers/regulator/pfuze100-regulator.c
-@@ -517,6 +517,79 @@ static inline struct device_node *match_of_node(int index)
+@@ -648,6 +648,79 @@ static int pfuze_power_off_prepare_init(struct pfuze_chip *pfuze_chip)
+ 	return 0;
  }
- #endif
  
 +static int pfuze_read_reg(struct i2c_client *client,
 +		u8 reg, u8 len, void *val)
@@ -652,7 +616,7 @@ index 7f7fb013965a..f6b4b59df249 100644
  static int pfuze_identify(struct pfuze_chip *pfuze_chip)
  {
  	unsigned int value;
-@@ -605,6 +678,8 @@ static int pfuze100_regulator_probe(struct i2c_client *client,
+@@ -737,6 +810,8 @@ static int pfuze100_regulator_probe(struct i2c_client *client,
  		return ret;
  	}
  
@@ -661,29 +625,11 @@ index 7f7fb013965a..f6b4b59df249 100644
  	ret = pfuze_identify(pfuze_chip);
  	if (ret) {
  		dev_err(&client->dev, "unrecognized pfuze chip ID!\n");
-diff --git a/drivers/video/fbdev/mxc/mxc_lcdif.c b/drivers/video/fbdev/mxc/mxc_lcdif.c
-index 59d429c82017..58f77724d2b9 100644
---- a/drivers/video/fbdev/mxc/mxc_lcdif.c
-+++ b/drivers/video/fbdev/mxc/mxc_lcdif.c
-@@ -36,6 +36,13 @@ struct mxc_lcdif_data {
- #define DISPDRV_LCD	"lcd"
- 
- static struct fb_videomode lcdif_modedb[] = {
-+	/* IWG15M-SM: LCD: Parameters for the WQVGA LCD used */
-+	{
-+	/* 480x272 @ 57 Hz , pixel clk @ 27MHz */
-+	"WQVGA", 60, 480, 272, 30030, 2, 2, 1, 2, 41, 10,
-+	FB_SYNC_CLK_LAT_FALL,
-+	FB_VMODE_NONINTERLACED,
-+	0,},
- 	{
- 	/* 800x480 @ 57 Hz , pixel clk @ 27MHz */
- 	"CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
 diff --git a/drivers/watchdog/imx2_wdt.c b/drivers/watchdog/imx2_wdt.c
-index 6a279a831479..bcf3bbff30a0 100644
+index 8d019a961ccc..93442752a083 100644
 --- a/drivers/watchdog/imx2_wdt.c
 +++ b/drivers/watchdog/imx2_wdt.c
-@@ -225,6 +225,8 @@ static irqreturn_t imx2_wdt_isr(int irq, void *wdog_arg)
+@@ -215,6 +215,8 @@ static irqreturn_t imx2_wdt_isr(int irq, void *wdog_arg)
  	return IRQ_HANDLED;
  }
  
@@ -692,7 +638,7 @@ index 6a279a831479..bcf3bbff30a0 100644
  static int imx2_wdt_start(struct watchdog_device *wdog)
  {
  	struct imx2_wdt_device *wdev = watchdog_get_drvdata(wdog);
-@@ -236,6 +238,10 @@ static int imx2_wdt_start(struct watchdog_device *wdog)
+@@ -226,6 +228,10 @@ static int imx2_wdt_start(struct watchdog_device *wdog)
  
  	set_bit(WDOG_HW_RUNNING, &wdog->status);
  

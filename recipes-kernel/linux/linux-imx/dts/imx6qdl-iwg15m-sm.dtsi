@@ -200,10 +200,6 @@
 	};
 };
 
-&anatop_reg_3p0 {
-	regulator-always-on;
-};
-
 &reg_arm {
 	vin-supply = <&sw1a_reg>;
 };

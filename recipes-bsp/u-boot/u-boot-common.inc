@@ -3,14 +3,14 @@
 
 inherit fsl-u-boot-localversion
 
+DESCRIPTION = "i.MX U-Boot suppporting i.MX reference boards."
+
 LICENSE = "GPLv2+"
 LIC_FILES_CHKSUM = "file://Licenses/gpl-2.0.txt;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
-
-SRCBRANCH = "imx_v2018.03_4.14.98_2.0.0_ga"
+SRCBRANCH = "lf-5.4.y_v2019.04"
 UBOOT_SRC ?= "git://source.codeaurora.org/external/imx/uboot-imx.git;protocol=https"
-SRCREV = "0d6d8807793e74402e23772062469aeb4808dd48"
+SRCREV = "228843cdf5435d4bd69f42a6015f78761ff4cc0d"
 SRC_URI = "${UBOOT_SRC};branch=${SRCBRANCH} \
 	file://0001-iwave.patch \
 	file://board/ \
@@ -19,7 +19,16 @@ SRC_URI = "${UBOOT_SRC};branch=${SRCBRANCH} \
 	file://configs/mx6_iwg15m_sm.h \
 "
 
+DEPENDS += "flex-native bison-native bc-native dtc-native"
+
 S = "${WORKDIR}/git"
+B = "${WORKDIR}/build"
+
+inherit fsl-u-boot-localversion
+
+LOCALVERSION ?= "-${SRCBRANCH}"
+
+BOOT_TOOLS = "imx-boot-tools"
 
 do_configure_prepend() {
 	# install config files

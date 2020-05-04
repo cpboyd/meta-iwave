@@ -1,8 +1,8 @@
 diff --git a/arch/arm/include/asm/arch-mx6/mx6-ddr.h b/arch/arm/include/asm/arch-mx6/mx6-ddr.h
-index 19d2f1d9c5..e103e134f5 100644
+index e0fadb9b1c..636f2142c0 100644
 --- a/arch/arm/include/asm/arch-mx6/mx6-ddr.h
 +++ b/arch/arm/include/asm/arch-mx6/mx6-ddr.h
-@@ -6,6 +6,8 @@
+@@ -5,6 +5,8 @@
  #ifndef __ASM_ARCH_MX6_DDR_H__
  #define __ASM_ARCH_MX6_DDR_H__
  
@@ -11,7 +11,7 @@ index 19d2f1d9c5..e103e134f5 100644
  #ifndef CONFIG_SPL_BUILD
  #ifdef CONFIG_MX6Q
  #include "mx6q-ddr.h"
-@@ -471,6 +473,7 @@ void mx6_dram_cfg(const struct mx6_ddr_sysinfo *,
+@@ -470,6 +472,7 @@ void mx6_dram_cfg(const struct mx6_ddr_sysinfo *,
  		  const void *);
  
  #endif /* CONFIG_SPL_BUILD */
@@ -20,14 +20,15 @@ index 19d2f1d9c5..e103e134f5 100644
  #define MX6_MMDC_P0_MDCTL	0x021b0000
  #define MX6_MMDC_P0_MDPDC	0x021b0004
 diff --git a/arch/arm/include/asm/arch-mx6/mx6_plugin.S b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
-index 02d855fbc3..c09cb1c717 100644
+index 87f2d7b50d..15690236a8 100644
 --- a/arch/arm/include/asm/arch-mx6/mx6_plugin.S
 +++ b/arch/arm/include/asm/arch-mx6/mx6_plugin.S
-@@ -64,6 +64,26 @@ plugin_start:
+@@ -63,7 +63,26 @@ plugin_start:
  before_calling_rom___pu_irom_hwcnfg_setup:
  	ldr r3, =ROM_VERSION_OFFSET
  	ldr r4, [r3]
-+#ifdef IWCONFIG_MX6_IWG15
+-#if defined(CONFIG_MX6S) || defined(CONFIG_MX6DL)
++#if defined(IWCONFIG_MX6_IWG15)
 +	/* IWG15: SingleBinary: Checking Processor Type */
 +	ldr r5, =ANATOP_BASE_ADDR
 +	ldr r6, [r5,#0x260]
@@ -46,40 +47,40 @@ index 02d855fbc3..c09cb1c717 100644
 +	cmp r4, r3
 +	ldrge r3, =ROM_API_TABLE_BASE_ADDR_MX6DQ_TO15
 +	ldrlt r3, =ROM_API_TABLE_BASE_ADDR_LEGACY
-+#else /* IWCONFIG_MX6_IWG15 */
- #if defined(CONFIG_MX6S) || defined(CONFIG_MX6DL)
++#elif defined(CONFIG_MX6S) || defined(CONFIG_MX6DL)
  	ldr r3, =ROM_VERSION_TO12
  	cmp r4, r3
-@@ -77,6 +97,8 @@ before_calling_rom___pu_irom_hwcnfg_setup:
+ 	ldrge r3, =ROM_API_TABLE_BASE_ADDR_MX6DL_TO12
+@@ -76,6 +95,7 @@ before_calling_rom___pu_irom_hwcnfg_setup:
  #else
  	ldr r3, =ROM_API_TABLE_BASE_ADDR_LEGACY
  #endif
-+#endif /* IWCONFIG_MX6_IWG15 */
 +common:
  	ldr r4, [r3, #ROM_API_HWCNFG_SETUP_OFFSET]
  	blx r4
  after_calling_rom___pu_irom_hwcnfg_setup:
 diff --git a/arch/arm/mach-imx/mx6/Kconfig b/arch/arm/mach-imx/mx6/Kconfig
-index d5a5a7a38b..3edf905325 100644
+index 88f188e9c2..bc95841166 100644
 --- a/arch/arm/mach-imx/mx6/Kconfig
 +++ b/arch/arm/mach-imx/mx6/Kconfig
-@@ -129,6 +129,15 @@ config TARGET_MX6SABRESD
-     select BOARD_EARLY_INIT_F
-     select NXP_BOARD_REVISION
+@@ -367,6 +367,16 @@ config TARGET_MX6SABRESD
+ 	select SUPPORT_SPL
+ 	imply CMD_DM
  
 +config TARGET_MX6_IWG15M_SM
 +	bool "mx6_iwg15m_sm"
++	select BOARD_EARLY_INIT_F
 +	select BOARD_LATE_INIT
-+	select MX6QDL
 +	select DM
 +	select DM_THERMAL
-+	select BOARD_EARLY_INIT_F
++	select MX6QDL
 +	select NXP_BOARD_REVISION
++	imply CMD_DM
 +
- config TARGET_MX6QDLARM2
-     bool
-     select BOARD_LATE_INIT
-@@ -649,6 +658,7 @@ source "board/freescale/mx6ul_14x14_ddr3_arm2/Kconfig"
+ config TARGET_MX6QSABREAUTO
+     bool "mx6qsabreauto"
+     select TARGET_MX6SABREAUTO_COMMON
+@@ -732,6 +742,7 @@ source "board/freescale/mx6ul_14x14_ddr3_arm2/Kconfig"
  source "board/freescale/mx6ul_14x14_lpddr2_arm2/Kconfig"
  source "board/freescale/mx6ullevk/Kconfig"
  source "board/freescale/mx6ull_ddr3_arm2/Kconfig"
@@ -88,11 +89,11 @@ index d5a5a7a38b..3edf905325 100644
  source "board/phytec/pcm058/Kconfig"
  source "board/phytec/pfla02/Kconfig"
 diff --git a/drivers/net/fec_mxc.c b/drivers/net/fec_mxc.c
-index cc23aeacf5..885780505d 100644
+index f87ae1eae7..1ee648eb50 100644
 --- a/drivers/net/fec_mxc.c
 +++ b/drivers/net/fec_mxc.c
-@@ -1171,6 +1171,31 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
- 	bus = fec_get_miibus((ulong)base_mii, dev_id);
+@@ -1210,6 +1210,31 @@ int fecmxc_initialize_multi(bd_t *bd, int dev_id, int phy_id, uint32_t addr)
+ 	bus = fec_get_miibus(base_mii, dev_id);
  	if (!bus)
  		return -ENOMEM;
 +
