@@ -1,22 +1,5 @@
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 813456cc48c5..d86e4c338439 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -570,7 +570,11 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
- 	imx6qp-tx6qp-8137.dtb \
- 	imx6qp-tx6qp-8137-mb7.dtb \
- 	imx6qp-wandboard-revd1.dtb \
--	imx6qp-zii-rdu2.dtb
-+	imx6qp-zii-rdu2.dtb \
-+	imx6qd-iwg15m-sm_ldoactive.dtb \
-+	imx6dls-iwg15m-sm_ldoactive.dtb \
-+	imx6qd-iwg15m-sm_ldobypass.dtb \
-+	imx6dls-iwg15m-sm_ldobypass.dtb
- dtb-$(CONFIG_SOC_IMX6SL) += \
- 	imx6sl-evk.dtb \
- 	imx6sl-evk-ldo.dtb \
 diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index cb6340b2eb33..ec83514ab779 100644
+index 42e609b75d31..25860ac72fe7 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
 @@ -508,6 +508,7 @@ config SOC_IMX6Q
@@ -28,7 +11,7 @@ index cb6340b2eb33..ec83514ab779 100644
  	help
  	  This enables support for Freescale i.MX6 Quad processor.
 diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
-index 98a07af52779..ebaa4aec0fce 100644
+index 23241e18d864..f3ee432e9902 100644
 --- a/arch/arm/mach-imx/Makefile
 +++ b/arch/arm/mach-imx/Makefile
 @@ -87,7 +87,7 @@ AFLAGS_headsmp.o :=-Wa,-march=armv7-a
