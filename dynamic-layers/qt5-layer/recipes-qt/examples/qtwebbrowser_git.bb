@@ -6,19 +6,18 @@ inherit qmake5
 require recipes-qt/qt5/qt5.inc
 require recipes-qt/qt5/qt5-git.inc
 
-QT_GIT_PROJECT = "qt-apps"
-QT_MODULE_BRANCH = "dev"
+SRC_URI = " \
+    git://github.com/cpboyd/qtweb-kiosk.git;protocol=ssh \
+"
+SRCREV = "c6adf867bbff1bf7e4ee744d2c5af4c520211563"
 
-SRCREV = "09d629199fa153ea7954321d81f647d5eb52fb6c"
-
-DEPENDS = "qtbase qtdeclarative qtwebengine"
+DEPENDS = "qtwebengine"
 RDEPENDS_${PN} = " \
-	liberation-fonts \
-	qtvirtualkeyboard \
+	ttf-roboto \
 	qtdeclarative-qmlplugins \
-	qtgraphicaleffects-qmlplugins \
 	qtquickcontrols-qmlplugins \
-	qtwebengine-qmlplugins \
+	qtvirtualkeyboard-qmlplugins \
+    qtwebengine-qmlplugins \
 "
 
 do_install_append() {
