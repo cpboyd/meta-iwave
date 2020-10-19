@@ -82,7 +82,7 @@
 		default_bpp = <24>;
 		int_clk = <0>;
 		late_init = <0>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	mxcfb2: fb@1 {
@@ -93,7 +93,7 @@
 		default_bpp = <24>;
 		int_clk = <0>;
 		late_init = <0>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	mxcfb3: fb@2 {
@@ -254,14 +254,6 @@
 &hdmi_video {
 	fsl,phy_reg_vlev = <0x0294>;
 	fsl,phy_reg_cksymtx = <0x800d>;
-	status = "okay";
-};
-
-&mxcfb1 {
-	status = "okay";
-};
-
-&mxcfb2 {
 	status = "okay";
 };
 

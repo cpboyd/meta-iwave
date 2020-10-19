@@ -1,5 +1,5 @@
 diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index 42e609b75d31..25860ac72fe7 100644
+index cb6340b2eb33..ec83514ab779 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
 @@ -508,6 +508,7 @@ config SOC_IMX6Q
@@ -11,7 +11,7 @@ index 42e609b75d31..25860ac72fe7 100644
  	help
  	  This enables support for Freescale i.MX6 Quad processor.
 diff --git a/arch/arm/mach-imx/Makefile b/arch/arm/mach-imx/Makefile
-index 23241e18d864..f3ee432e9902 100644
+index 98a07af52779..ebaa4aec0fce 100644
 --- a/arch/arm/mach-imx/Makefile
 +++ b/arch/arm/mach-imx/Makefile
 @@ -87,7 +87,7 @@ AFLAGS_headsmp.o :=-Wa,-march=armv7-a

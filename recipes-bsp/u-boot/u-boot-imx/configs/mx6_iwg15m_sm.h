@@ -36,15 +36,6 @@
 #define CONFIG_SYS_MMC_ENV_DEV		1	/* SDHC3 */
 #define CONFIG_SYS_MMC_ENV_PART		0	/* user partition */
 
-#ifdef CONFIG_SYS_PROMPT
-#undef CONFIG_SYS_PROMPT
-#endif
-#define CONFIG_SYS_PROMPT		"iWave-G15 > "
-
-#ifdef IWCONFIG_SYS_USE_SPINOR
-#define CONFIG_SF_DEFAULT_CS		0
-#endif
-
 /*
  * imx6 q/dl/solo pcie would be failed to work properly in kernel, if
  * the pcie module is iniialized/enumerated both in uboot and linux
@@ -66,13 +57,7 @@
 #define CONFIG_PCIE_IMX_POWER_GPIO	IMX_GPIO_NR(3, 19)
 #endif
 
-#define BSP_VERSION			"iW-PREPZ-SC-01-R3.0-REL1.0-Linux4.1.15"
-
-/* PMIC */
-#define CONFIG_POWER
-#define CONFIG_POWER_I2C
-#define CONFIG_POWER_PFUZE100
-#define CONFIG_POWER_PFUZE100_I2C_ADDR	0x08
+#define BSP_VERSION			"iW-Yocto-3.1"
 
 /* USB Configs */
 #ifdef CONFIG_CMD_USB

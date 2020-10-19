@@ -42,11 +42,12 @@
 #include <usb.h>
 #include <usb/ehci-ci.h>
 #include <asm/arch/mx6-ddr.h>
+#include <power/regulator.h>
 #ifdef CONFIG_SATA
 #include <asm/mach-imx/sata.h>
 #endif
 #ifdef CONFIG_FSL_FASTBOOT
-#include <fsl_fastboot.h>
+#include <fb_fsl.h>
 #endif /*CONFIG_FSL_FASTBOOT*/
 #include "mx6_iwg15m_sm.h"
 
@@ -70,24 +71,20 @@ DECLARE_GLOBAL_DATA_PTR;
 	PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS |	\
 	PAD_CTL_ODE | PAD_CTL_SRE_FAST)
 
-#define I2C_PMIC	0
-#define I2C_PAD 	MUX_PAD_CTRL(I2C_PAD_CTRL)
-
-#define BACKLIGHT_EN	IMX_GPIO_NR(1, 17)
 #define LCD_PWR_EN	IMX_GPIO_NR(4, 13)
 #define LCD_RESET	IMX_GPIO_NR(7, 11)
 #define HDMI_CEC_EN	IMX_GPIO_NR(1, 21)
 #define COM_RESET_GPIO	IMX_GPIO_NR(1, 11)
 
-#define is_mx6dlsolo()	(is_mx6dl() || is_mx6solo())
+#define I2C_PMIC	0
+
+#define I2C_PAD MUX_PAD_CTRL(I2C_PAD_CTRL)
+
+#define DISP0_PWR_EN	IMX_GPIO_NR(1, 17)
 
 int dram_init(void)
 {
-	if (is_mx6solo())
-		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE_512MB);
-	else
-		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
-
+	gd->ram_size = imx_ddr_size();
 	return 0;
 }
 
@@ -165,13 +162,13 @@ static iomux_v3_cfg_t const bl_pads[] = {
 	IOMUX_PADS(PAD_SD1_DAT1__GPIO1_IO17 | MUX_PAD_CTRL(ENET_PAD_CTRL)),
 };
 
-static void setup_iomux_backlight_off(void)
+static void enable_backlight(void)
 {
 	/* Setup backlight */
 	SETUP_IOMUX_PADS(bl_pads);
 	/* Turn off backlight until display is ready */
-	gpio_request(BACKLIGHT_EN, "Display Backlight Enable");
-	gpio_direction_output(BACKLIGHT_EN, 1);
+	gpio_request(DISP0_PWR_EN, "Display Power Enable");
+	gpio_direction_output(DISP0_PWR_EN, 1);
 }
 
 #ifdef CONFIG_SYS_I2C
@@ -270,12 +267,13 @@ int board_mmc_getcd(struct mmc *mmc)
 
 int board_mmc_init(bd_t *bis)
 {
+#ifndef CONFIG_SPL_BUILD
 	int ret;
 	int i;
 
 	/*
 	 * According to the board_mmc_init() the following map is done:
-	 * (U-boot device node)    (Physical Port)
+	 * (U-Boot device node)    (Physical Port)
 	 * mmc0                    SD3
 	 * mmc1                    eMMC
 	 */
@@ -283,6 +281,7 @@ int board_mmc_init(bd_t *bis)
 		switch (i) {
 		case 0:
 			SETUP_IOMUX_PADS(usdhc3_pads);
+			gpio_request(USDHC3_CD_GPIO, "USDHC3 CD");
 			gpio_direction_input(USDHC3_CD_GPIO);
 			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
 			break;
@@ -303,11 +302,38 @@ int board_mmc_init(bd_t *bis)
 	}
 
 	return 0;
+#else
+	struct src *psrc = (struct src *)SRC_BASE_ADDR;
+	unsigned reg = readl(&psrc->sbmr1) >> 11;
+	/*
+	 * Upon reading BOOT_CFG register the following map is done:
+	 * Bit 11 and 12 of BOOT_CFG register can determine the current
+	 * mmc port
+	 * 0x1                  SD2
+	 * 0x2                  SD4
+	 */
+
+	switch (reg & 0x3) {
+	case 0x1:
+		SETUP_IOMUX_PADS(usdhc3_pads);
+		usdhc_cfg[0].esdhc_base = USDHC3_BASE_ADDR;
+		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+		gd->arch.sdhc_clk = usdhc_cfg[0].sdhc_clk;
+		break;
+	case 0x2:
+		SETUP_IOMUX_PADS(usdhc4_pads);
+		usdhc_cfg[0].esdhc_base = USDHC4_BASE_ADDR;
+		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
+		gd->arch.sdhc_clk = usdhc_cfg[0].sdhc_clk;
+		break;
+	}
+
+	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+#endif
 }
 #endif
 
-#define MII_KSZ9031_EXT_MMD_ADD2	0x02
-int mx6_rgmii_rework(struct phy_device *phydev)
+static int mx6_rgmii_rework(struct phy_device *phydev)
 {
 	if (strcasecmp(phydev->drv->name, "Micrel ksz9031") == 0 &&
 			((phydev->drv->uid & phydev->drv->mask) ==
@@ -318,20 +344,20 @@ int mx6_rgmii_rework(struct phy_device *phydev)
 
 		/* IWG15M: ETHERNET: Final Skew settings for Rev4.0 PHY9031 */
 		/* min rx/tx control */
-		if (ksz9031_phy_extended_write(phydev,MII_KSZ9031_EXT_MMD_ADD2,
+		if (ksz9031_phy_extended_write(phydev, 0x02,
 				MII_KSZ9031_EXT_RGMII_CTRL_SIG_SKEW, MII_KSZ9031_MOD_DATA_POST_INC_RW,0x0080) < 0)
 			return -1;
 
 		/* min rx data delay */
-		if (ksz9031_phy_extended_write(phydev,MII_KSZ9031_EXT_MMD_ADD2,
+		if (ksz9031_phy_extended_write(phydev, 0x02,
 				MII_KSZ9031_EXT_RGMII_RX_DATA_SKEW, MII_KSZ9031_MOD_DATA_POST_INC_RW,0x7787) < 0)
 			return -1;
 		/* min tx data delay */
-		if (ksz9031_phy_extended_write(phydev,MII_KSZ9031_EXT_MMD_ADD2,
+		if (ksz9031_phy_extended_write(phydev, 0x02,
 				MII_KSZ9031_EXT_RGMII_TX_DATA_SKEW, MII_KSZ9031_MOD_DATA_POST_INC_RW, 0x0000 ) < 0)
 			return -1;
 		/* max rx/tx clock delay */
-		if (ksz9031_phy_extended_write(phydev,MII_KSZ9031_EXT_MMD_ADD2,
+		if (ksz9031_phy_extended_write(phydev, 0x02,
 				MII_KSZ9031_EXT_RGMII_CLOCK_SKEW, MII_KSZ9031_MOD_DATA_POST_INC_RW,0x03ff) < 0)
 			return -1;
 
@@ -494,7 +520,7 @@ int board_early_init_f(void)
 	setup_iomux_uart();
 
 	/* Power OFF the LCD Backlight */
-	setup_iomux_backlight_off();
+	enable_backlight();
 
 	return 0;
 }
@@ -514,7 +540,7 @@ int board_init(void)
 				CONFIG_SYS_I2C_SLAVE, &i2c_pad_dq_info0);
 		setup_i2c(2, CONFIG_SYS_I2C_SPEED,
 				CONFIG_SYS_I2C_SLAVE, &i2c_pad_dq_info2);
-	} else if (is_mx6dlsolo()) {
+	} else if (is_mx6sdl()) {
 		setup_i2c(0, CONFIG_SYS_I2C_SPEED,
 				CONFIG_SYS_I2C_SLAVE, &i2c_pad_dl_info0);
 		setup_i2c(2, CONFIG_SYS_I2C_SPEED,
@@ -542,61 +568,191 @@ int power_init_board(void)
 	if (!pfuze)
 		return -ENODEV;
 
-	ret = pfuze_mode_init(pfuze, APS_PFM);
+	if (is_mx6dqp())
+		ret = pfuze_mode_init(pfuze, APS_APS);
+	else
+		ret = pfuze_mode_init(pfuze, APS_PFM);
+
+	if (ret < 0)
+		return ret;
+	/* VGEN3 and VGEN5 corrected on i.mx6qp board */
+	if (!is_mx6dqp()) {
+		/* Increase VGEN3 from 2.5 to 2.8V */
+		pmic_reg_read(pfuze, PFUZE100_VGEN3VOL, &reg);
+		reg &= ~LDO_VOL_MASK;
+		reg |= LDOB_2_80V;
+		pmic_reg_write(pfuze, PFUZE100_VGEN3VOL, reg);
+
+		/* Increase VGEN5 from 2.8 to 3V */
+		pmic_reg_read(pfuze, PFUZE100_VGEN5VOL, &reg);
+		reg &= ~LDO_VOL_MASK;
+		reg |= LDOB_3_00V;
+		pmic_reg_write(pfuze, PFUZE100_VGEN5VOL, reg);
+	}
+
+	if (is_mx6dqp()) {
+		/* set SW1C staby volatage 1.075V*/
+		pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
+		reg &= ~0x3f;
+		reg |= 0x1f;
+		pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
+
+		/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
+		pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
+
+		/* set SW2/VDDARM staby volatage 0.975V*/
+		pmic_reg_read(pfuze, PFUZE100_SW2STBY, &reg);
+		reg &= ~0x3f;
+		reg |= 0x17;
+		pmic_reg_write(pfuze, PFUZE100_SW2STBY, reg);
+
+		/* set SW2/VDDARM step ramp up time to from 16us to 4us/25mV */
+		pmic_reg_read(pfuze, PFUZE100_SW2CONF, &reg);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(pfuze, PFUZE100_SW2CONF, reg);
+	} else {
+		/* set SW1AB staby volatage 0.975V*/
+		pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
+		reg &= ~0x3f;
+		reg |= 0x1b;
+		pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
+
+		/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
+		pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
+
+		/* set SW1C staby volatage 0.975V*/
+		pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
+		reg &= ~0x3f;
+		reg |= 0x1b;
+		pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
+
+		/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
+		pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
+
+		/* Since in IWG15M-SM, VGEN1, VGEN2, VGEN3, VGEN6 and SWBST is not used,
+		* disabling VGEN1, VGEN2, VGEN3, VGEN 6 and SWBST
+		*/
+		/* Disabli0ng VGEN1 */
+		pmic_reg_read(pfuze, PFUZE100_VGEN1VOL, &reg);
+		reg &= ~0x1f;
+		pmic_reg_write(pfuze, PFUZE100_VGEN1VOL, reg);
+
+		/* Disabling VGEN2 */
+		pmic_reg_read(pfuze, PFUZE100_VGEN2VOL, &reg);
+		reg &= ~0x1f;
+		pmic_reg_write(pfuze, PFUZE100_VGEN2VOL, reg);
+
+		/* Disabling VGEN3 */
+		pmic_reg_read(pfuze, PFUZE100_VGEN3VOL, &reg);
+		reg &= ~0x1f;
+		pmic_reg_write(pfuze, PFUZE100_VGEN3VOL, reg);
+
+		/* Disabling VGEN6 */
+		pmic_reg_read(pfuze, PFUZE100_VGEN6VOL, &reg);
+		reg &= ~0x1f;
+		pmic_reg_write(pfuze, PFUZE100_VGEN6VOL, reg);
+
+		/* Disabling SWBST */
+		pmic_reg_read(pfuze, PFUZE100_SWBSTCON1, &reg);
+		reg &= ~0x6f;
+		pmic_reg_write(pfuze, PFUZE100_SWBSTCON1, reg);
+	}
+
+	return 0;
+}
+
+#elif defined(CONFIG_DM_PMIC_PFUZE100)
+int power_init_board(void)
+{
+	struct udevice *dev;
+	unsigned int reg;
+	int ret;
+
+	dev = pfuze_common_init();
+	if (!dev)
+		return -ENODEV;
+
+	if (is_mx6dqp())
+		ret = pfuze_mode_init(dev, APS_APS);
+	else
+		ret = pfuze_mode_init(dev, APS_PFM);
 	if (ret < 0)
 		return ret;
 
-	/* set SW1AB staby volatage 0.975V*/
-	pmic_reg_read(pfuze, PFUZE100_SW1ABSTBY, &reg);
-	reg &= ~0x3f;
-	reg |= 0x1b;
-	pmic_reg_write(pfuze, PFUZE100_SW1ABSTBY, reg);
+	/* VGEN3 and VGEN5 corrected on i.mx6qp board */
+	if (!is_mx6dqp()) {
+		/* Increase VGEN3 from 2.5 to 2.8V */
+		reg = pmic_reg_read(dev, PFUZE100_VGEN3VOL);
+		reg &= ~LDO_VOL_MASK;
+		reg |= LDOB_2_80V;
+		pmic_reg_write(dev, PFUZE100_VGEN3VOL, reg);
 
-	/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
-	pmic_reg_read(pfuze, PFUZE100_SW1ABCONF, &reg);
-	reg &= ~0xc0;
-	reg |= 0x40;
-	pmic_reg_write(pfuze, PFUZE100_SW1ABCONF, reg);
+		/* Increase VGEN5 from 2.8 to 3V */
+		reg = pmic_reg_read(dev, PFUZE100_VGEN5VOL);
+		reg &= ~LDO_VOL_MASK;
+		reg |= LDOB_3_00V;
+		pmic_reg_write(dev, PFUZE100_VGEN5VOL, reg);
+	}
 
-	/* set SW1C staby volatage 0.975V*/
-	pmic_reg_read(pfuze, PFUZE100_SW1CSTBY, &reg);
-	reg &= ~0x3f;
-	reg |= 0x1b;
-	pmic_reg_write(pfuze, PFUZE100_SW1CSTBY, reg);
+	if (is_mx6dqp()) {
+		/* set SW1C staby volatage 1.075V*/
+		reg = pmic_reg_read(dev, PFUZE100_SW1CSTBY);
+		reg &= ~0x3f;
+		reg |= 0x1f;
+		pmic_reg_write(dev, PFUZE100_SW1CSTBY, reg);
 
-	/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
-	pmic_reg_read(pfuze, PFUZE100_SW1CCONF, &reg);
-	reg &= ~0xc0;
-	reg |= 0x40;
-	pmic_reg_write(pfuze, PFUZE100_SW1CCONF, reg);
-	
-      /* Since in IWG15M-SM, VGEN1, VGEN2, VGEN3, VGEN6 and SWBST is not used,
-	 * disabling VGEN1, VGEN2, VGEN3, VGEN 6 and SWBST
-	*/
-	/* Disabli0ng VGEN1 */
-	pmic_reg_read(pfuze, PFUZE100_VGEN1VOL, &reg);
-	reg &= ~0x1f;
-	pmic_reg_write(pfuze, PFUZE100_VGEN1VOL, reg);
+		/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
+		reg = pmic_reg_read(dev, PFUZE100_SW1CCONF);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(dev, PFUZE100_SW1CCONF, reg);
 
-	/* Disabling VGEN2 */
-	pmic_reg_read(pfuze, PFUZE100_VGEN2VOL, &reg);
-	reg &= ~0x1f;
-	pmic_reg_write(pfuze, PFUZE100_VGEN2VOL, reg);
+		/* set SW2/VDDARM staby volatage 0.975V*/
+		reg = pmic_reg_read(dev, PFUZE100_SW2STBY);
+		reg &= ~0x3f;
+		reg |= 0x17;
+		pmic_reg_write(dev, PFUZE100_SW2STBY, reg);
 
-	/* Disabling VGEN3 */
-	pmic_reg_read(pfuze, PFUZE100_VGEN3VOL, &reg);
-	reg &= ~0x1f;
-	pmic_reg_write(pfuze, PFUZE100_VGEN3VOL, reg);
+		/* set SW2/VDDARM step ramp up time to from 16us to 4us/25mV */
+		reg = pmic_reg_read(dev, PFUZE100_SW2CONF);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(dev, PFUZE100_SW2CONF, reg);
+	} else {
+		/* set SW1AB staby volatage 0.975V*/
+		reg = pmic_reg_read(dev, PFUZE100_SW1ABSTBY);
+		reg &= ~0x3f;
+		reg |= 0x1b;
+		pmic_reg_write(dev, PFUZE100_SW1ABSTBY, reg);
 
-	/* Disabling VGEN6 */
-	pmic_reg_read(pfuze, PFUZE100_VGEN6VOL, &reg);
-	reg &= ~0x1f;
-	pmic_reg_write(pfuze, PFUZE100_VGEN6VOL, reg);
+		/* set SW1AB/VDDARM step ramp up time from 16us to 4us/25mV */
+		reg = pmic_reg_read(dev, PFUZE100_SW1ABCONF);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(dev, PFUZE100_SW1ABCONF, reg);
 
-	/* Disabling SWBST */
-	pmic_reg_read(pfuze, PFUZE100_SWBSTCON1, &reg);
-	reg &= ~0x6f;
-	pmic_reg_write(pfuze, PFUZE100_SWBSTCON1, reg);
+		/* set SW1C staby volatage 0.975V*/
+		reg = pmic_reg_read(dev, PFUZE100_SW1CSTBY);
+		reg &= ~0x3f;
+		reg |= 0x1b;
+		pmic_reg_write(dev, PFUZE100_SW1CSTBY, reg);
+
+		/* set SW1C/VDDSOC step ramp up time to from 16us to 4us/25mV */
+		reg = pmic_reg_read(dev, PFUZE100_SW1CCONF);
+		reg &= ~0xc0;
+		reg |= 0x40;
+		pmic_reg_write(dev, PFUZE100_SW1CCONF, reg);
+	}
 
 	return 0;
 }
@@ -620,11 +776,19 @@ void ldo_mode_set(int ldo_bypass)
 	if (check_1_2G()) {
 		ldo_bypass = 0;	/* ldo_enable on 1.2G chip */
 		printf("1.2G chip, increase VDDARM_IN/VDDSOC_IN\n");
-		/* increase VDDARM to 1.425V */
-		pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
-		value &= ~0x3f;
-		value |= 0x2d;
-		pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
+		if (is_mx6dqp()) {
+			/* increase VDDARM to 1.425V */
+			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
+			value &= ~0x3f;
+			value |= 0x29;
+			pmic_reg_write(p, PFUZE100_SW2VOL, value);
+		} else {
+			/* increase VDDARM to 1.425V */
+			pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
+			value &= ~0x3f;
+			value |= 0x2d;
+			pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
+		}
 		/* increase VDDSOC to 1.425V */
 		pmic_reg_read(p, PFUZE100_SW1CVOL, &value);
 		value &= ~0x3f;
@@ -634,15 +798,23 @@ void ldo_mode_set(int ldo_bypass)
 	/* switch to ldo_bypass mode , boot on 800Mhz */
 	if (ldo_bypass) {
 		prep_anatop_bypass();
-		/* decrease VDDARM for 400Mhz DQ:1.1V, DL:1.275V */
-		pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
-		value &= ~0x3f;
-		if (is_mx6dl())
-			value |= 0x27;
-		else
-			value |= 0x20;
+		if (is_mx6dqp()) {
+			/* decrease VDDARM for 400Mhz DQP:1.1V*/
+			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
+			value &= ~0x3f;
+			value |= 0x1c;
+			pmic_reg_write(p, PFUZE100_SW2VOL, value);
+		} else {
+			/* decrease VDDARM for 400Mhz DQ:1.1V, DL:1.275V */
+			pmic_reg_read(p, PFUZE100_SW1ABVOL, &value);
+			value &= ~0x3f;
+			if (is_mx6dl())
+				value |= 0x27;
+			else
+				value |= 0x20;
 
-		pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
+			pmic_reg_write(p, PFUZE100_SW1ABVOL, value);
+		}
 		/* increase VDDSOC to 1.3V */
 		pmic_reg_read(p, PFUZE100_SW1CVOL, &value);
 		value &= ~0x3f;
@@ -655,12 +827,22 @@ void ldo_mode_set(int ldo_bypass)
 		 * VDDARM:0.975V@400M; VDDSOC:1.175V@400M
 		 * MX6DL:
 		 * VDDARM:1.175V@800M; VDDSOC:1.175V@800M
-		 * VDDARM:1.075V@400M; VDDSOC:1.175V@400M
+		 * VDDARM:1.15V@400M; VDDSOC:1.175V@400M
 		 */
 		is_400M = set_anatop_bypass(2);
+		if (is_mx6dqp()) {
+			pmic_reg_read(p, PFUZE100_SW2VOL, &value);
+			value &= ~0x3f;
+			if (is_400M)
+				value |= 0x17;
+			else
+				value |= 0x1e;
+			pmic_reg_write(p, PFUZE100_SW2VOL, value);
+		}
+
 		if (is_400M) {
 			if (is_mx6dl())
-				vddarm = 0x1f;
+				vddarm = 0x22;
 			else
 				vddarm = 0x1b;
 		} else {
@@ -679,6 +861,86 @@ void ldo_mode_set(int ldo_bypass)
 		value &= ~0x3f;
 		value |= 0x23;
 		pmic_reg_write(p, PFUZE100_SW1CVOL, value);
+
+		finish_anatop_bypass();
+		printf("switch to ldo_bypass mode!\n");
+	}
+}
+#elif defined(CONFIG_DM_PMIC_PFUZE100)
+void ldo_mode_set(int ldo_bypass)
+{
+	int is_400M;
+	unsigned char vddarm;
+	struct udevice *dev;
+	int ret;
+
+	ret = pmic_get("pfuze100", &dev);
+	if (ret == -ENODEV) {
+		printf("No PMIC found!\n");
+		return;
+	}
+
+	/* increase VDDARM/VDDSOC to support 1.2G chip */
+	if (check_1_2G()) {
+		ldo_bypass = 0; /* ldo_enable on 1.2G chip */
+		printf("1.2G chip, increase VDDARM_IN/VDDSOC_IN\n");
+		if (is_mx6dqp()) {
+			/* increase VDDARM to 1.425V */
+			pmic_clrsetbits(dev, PFUZE100_SW2VOL, 0x3f, 0x29);
+		} else {
+			/* increase VDDARM to 1.425V */
+			pmic_clrsetbits(dev, PFUZE100_SW1ABVOL, 0x3f, 0x2d);
+		}
+		/* increase VDDSOC to 1.425V */
+		pmic_clrsetbits(dev, PFUZE100_SW1CVOL, 0x3f, 0x2d);
+	}
+	/* switch to ldo_bypass mode , boot on 800Mhz */
+	if (ldo_bypass) {
+		prep_anatop_bypass();
+		if (is_mx6dqp()) {
+			/* decrease VDDARM for 400Mhz DQP:1.1V*/
+			pmic_clrsetbits(dev, PFUZE100_SW2VOL, 0x3f, 0x1c);
+		} else {
+			/* decrease VDDARM for 400Mhz DQ:1.1V, DL:1.275V */
+			if (is_mx6dl())
+				pmic_clrsetbits(dev, PFUZE100_SW1ABVOL, 0x3f, 0x27);
+			else
+				pmic_clrsetbits(dev, PFUZE100_SW1ABVOL, 0x3f, 0x20);
+		}
+		/* increase VDDSOC to 1.3V */
+		pmic_clrsetbits(dev, PFUZE100_SW1CVOL, 0x3f, 0x28);
+
+		/*
+		 * MX6Q/DQP:
+		 * VDDARM:1.15V@800M; VDDSOC:1.175V@800M
+		 * VDDARM:0.975V@400M; VDDSOC:1.175V@400M
+		 * MX6DL:
+		 * VDDARM:1.175V@800M; VDDSOC:1.175V@800M
+		 * VDDARM:1.15V@400M; VDDSOC:1.175V@400M
+		 */
+		is_400M = set_anatop_bypass(2);
+		if (is_mx6dqp()) {
+			if (is_400M)
+				pmic_clrsetbits(dev, PFUZE100_SW2VOL, 0x3f, 0x17);
+			else
+				pmic_clrsetbits(dev, PFUZE100_SW2VOL, 0x3f, 0x1e);
+		}
+
+		if (is_400M) {
+			if (is_mx6dl())
+				vddarm = 0x22;
+			else
+				vddarm = 0x1b;
+		} else {
+			if (is_mx6dl())
+				vddarm = 0x23;
+			else
+				vddarm = 0x22;
+		}
+		pmic_clrsetbits(dev, PFUZE100_SW1ABVOL, 0x3f, vddarm);
+
+		/* decrease VDDSOC to 1.175V */
+		pmic_clrsetbits(dev, PFUZE100_SW1CVOL, 0x3f, 0x23);
 
 		finish_anatop_bypass();
 		printf("switch to ldo_bypass mode!\n");

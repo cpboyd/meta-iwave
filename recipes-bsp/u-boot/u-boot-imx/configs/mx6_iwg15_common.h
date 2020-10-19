@@ -1,26 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0+ */
 /*
- * Copyright (c) 2017 iWave Systems Technologies Pvt. Ltd.
+ * Copyright (C) 2017 iWave Systems Technologies Pvt. Ltd.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * Common configuration settings for i.MX6 iWave boards.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- */
-
-/*
- * @file mx6_iwg15m_common.h
- *
- * @brief Common Config File for iMx6x base iwave boards
- *
- * @ingroup High level Configuration
  */
 
 
@@ -28,6 +11,7 @@
 #define __MX6_IWG15_COMMON_CONFIG_H
 
 #include "mx6_common.h"
+#include "imx_env.h"
 
 #define IWCONFIG_MX6_IWG15
 
@@ -54,7 +38,7 @@
 /* MMC Configs */
 #define CONFIG_FSL_ESDHC
 #define CONFIG_FSL_USDHC
-#define CONFIG_SYS_FSL_ESDHC_ADDR	0
+#define CONFIG_SYS_FSL_ESDHC_ADDR      0
 
 #define CONFIG_DYNAMIC_MMC_DEVNO
 #define CONFIG_BOUNCE_BUFFER
@@ -183,7 +167,7 @@
 
 #endif
 
-#define CONFIG_ARP_TIMEOUT		200UL
+#define CONFIG_ARP_TIMEOUT     200UL
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
@@ -192,24 +176,20 @@
 #define CONFIG_SYS_PBSIZE (CONFIG_SYS_CBSIZE + sizeof(CONFIG_SYS_PROMPT) + 16)
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE
 
-#define CONFIG_SYS_MEMTEST_START	0x10000000
-#define CONFIG_SYS_MEMTEST_END		0x10010000
-#define CONFIG_SYS_MEMTEST_SCRATCH	0x10800000
+#define CONFIG_SYS_MEMTEST_START       0x10000000
+#define CONFIG_SYS_MEMTEST_END         0x10010000
+#define CONFIG_SYS_MEMTEST_SCRATCH     0x10800000
 
 #define CONFIG_SYS_LOAD_ADDR		CONFIG_LOADADDR
 #define CONFIG_SYS_HZ			1000
 
-#define IWCONFIG_STACKSIZE		SZ_128K
-
 /* Physical Memory Map */
-#define CONFIG_NR_DRAM_BANKS		1
-#define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
+#define PHYS_SDRAM                     MMDC0_ARB_BASE_ADDR
 
 #define PHYS_SDRAM_SIZE			(1u * SZ_1G)
-#define PHYS_SDRAM_SIZE_512MB		SZ_512M
-#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
-#define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
-#define CONFIG_SYS_INIT_RAM_SIZE	IRAM_SIZE
+#define CONFIG_SYS_SDRAM_BASE          PHYS_SDRAM
+#define CONFIG_SYS_INIT_RAM_ADDR       IRAM_BASE_ADDR
+#define CONFIG_SYS_INIT_RAM_SIZE       IRAM_SIZE
 
 #define CONFIG_SYS_INIT_SP_OFFSET \
 	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
@@ -224,7 +204,6 @@
 #define CONFIG_ENV_OFFSET		(768 * SZ_1K)
 #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
 #define CONFIG_ENV_OFFSET_REDUND	CONFIG_ENV_OFFSET + CONFIG_ENV_SECT_SIZE
-#define IWCONFIG_SYS_USE_SPINOR
 #define CONFIG_ENV_SPI_BUS		CONFIG_SF_DEFAULT_BUS
 #define CONFIG_ENV_SPI_CS		CONFIG_SF_DEFAULT_CS
 #define CONFIG_ENV_SPI_MODE		CONFIG_SF_DEFAULT_MODE
@@ -232,6 +211,9 @@
 #define CONFIG_SYS_DCACHE_OFF
 #endif
 
+/*
+ * SATA Configs
+ */
 #ifdef CONFIG_CMD_SATA
 #define CONFIG_DWC_AHSATA
 #define CONFIG_SYS_SATA_MAX_DEVICE	1
@@ -240,17 +222,6 @@
 #define CONFIG_LBA48
 #define CONFIG_LIBATA
 #endif
-
-#ifdef IWCONFIG_SYS_USE_SPINOR
-#define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH
-#define CONFIG_SPI_FLASH_SST
-#define CONFIG_MXC_SPI
-#define CONFIG_SF_DEFAULT_BUS		0
-#define CONFIG_SF_DEFAULT_SPEED		20000000
-#define CONFIG_SF_DEFAULT_MODE		(SPI_MODE_0)
-#endif
-
 
 /* I2C Configs */
 #define CONFIG_SYS_I2C
@@ -262,14 +233,14 @@
 #else
 #define CONFIG_SYS_I2C_BASE		I2C2_BASE_ADDR
 #endif
-#define CONFIG_SYS_I2C_SPEED		100000
+#define CONFIG_SYS_I2C_SPEED		  100000
 #define CONFIG_SYS_I2C_SLAVE		0x8
 
 /* PMIC */
 #define CONFIG_POWER
 #define CONFIG_POWER_I2C
 #define CONFIG_POWER_PFUZE100
-#define CONFIG_POWER_PFUZE100_I2C_ADDR	0x08
+#define CONFIG_POWER_PFUZE100_I2C_ADDR 0x08
 
 #ifndef CONFIG_SYS_DCACHE_OFF
 #define CONFIG_CMD_CACHE
