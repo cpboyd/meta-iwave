@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/u-boot-imx:"
 
 SRC_URI_append = " file://fw_env.config"
 
