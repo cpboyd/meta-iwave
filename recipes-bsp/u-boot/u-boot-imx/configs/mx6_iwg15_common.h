@@ -107,7 +107,7 @@
 		"root=/dev/${rootdev}p${rootpart} rootwait rw ${lcd} ${hdmi}\0" \
 	"bootcmd_mmc=run bootargs_mmc;run fdt_check;mmc dev ${mmcdev};" \
 		"ext2load mmc ${mmcdev}:${bootpart} ${loadaddr} ${bootpath}${kernel};" \
-		"ext2load mmc ${mmcdev}:${bootpart} ${fdt_addr} ${bootpath}${fdt_file};" \
+		"ext2load mmc ${mmcdev}:${bootpart} ${fdt_addr} ${bootpath}devicetree/${fdt_file};" \
 		"bootz ${loadaddr} - ${fdt_addr}\0" \
 
 #ifdef CONFIG_TARGET_MX6_IWG15M_SM
